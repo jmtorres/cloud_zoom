@@ -1,6 +1,34 @@
 <?php
 
 /**
+ * Implementation of hook_requirements().
+ */
+function cloud_zoom_requirements($phase) {
+  if ($phase == 'runtime') {
+    $files_present = _cloud_zoom_files_present();
+
+    return array(
+      'cloud_zoom_sourcefiles' => array(
+        'title' => t('Cloud Zoom - Sourcecode downloaded and present'),
+        'value' => $files_present ? t('Files Present') : t('Files Missing'),
+        'description' => $files_present ? NULL : t('Have the sourcecode files for Cloud Zoom been downloaded from <a href="http://www.professorcloud.com/mainsite/cloud-zoom.htm">Professor Cloud</a>'),
+        'severity' => $files_present ? REQUIREMENT_OK : REQUIREMENT_ERROR,
+      ),
+    );
+  }
+}
+
+
+/**
+ * Internal Helper function to check if the required source code is present
+ */
+function _cloud_zoom_files_present() {
+  $path = drupal_get_path('module', 'cloud_zoom');
+  return (file_exists($path .'/cloud-zoom/cloud-zoom.1.0.2.min.js') && file_exists($path .'/cloud-zoom/cloud-zoom.css'));
+}
+
+
+/**
  * Implementation of hook_field_formatter().
  */
 function cloud_zoom_field_formatter_info() {
@@ -51,6 +79,8 @@ function cloud_zoom_theme() {
  * Theme handler for the cloud_zoom effect
  */
 function theme_cloud_zoom_formatter_imagefield($element) {
+  if (!_cloud_zoom_files_present()) return;
+
   // Add the cloud zoom JS and CSS
   drupal_add_js(drupal_get_path('module', 'cloud_zoom') .'/cloud-zoom/cloud-zoom.1.0.2.min.js');
   drupal_add_css(drupal_get_path('module', 'cloud_zoom') .'/cloud-zoom/cloud-zoom.css');
