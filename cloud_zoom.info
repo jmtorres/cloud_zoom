@@ -1,0 +1,7 @@
+name = Cloud Zoom
+description = Cloud Zoom (Professor Cloud) integration
+core = 6.x
+package = CCK
+
+dependencies[] = imagefield
+dependencies[] = imagecache
