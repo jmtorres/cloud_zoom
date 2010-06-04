@@ -1,7 +1,9 @@
+; $Id$
 name = Cloud Zoom
 description = Cloud Zoom (Professor Cloud) integration
-core = 6.x
-package = CCK
+core = 7.x
+package = Cloud Zoom
 
-dependencies[] = imagefield
-dependencies[] = imagecache
+dependencies[] = image
+
+files[] = cloud_zoom.module
