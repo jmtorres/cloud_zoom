@@ -122,7 +122,7 @@ function theme_cloud_zoom_image($variables) {
   // Theme the preview image using an image style
   $small = theme('image_style', $image);
 
-  //
+  // Build a Zoomed In URL path
   $zoomed = image_style_url($variables['zoom_preset'], $item['uri']);
   $zoomed = file_create_url($zoomed);
 
