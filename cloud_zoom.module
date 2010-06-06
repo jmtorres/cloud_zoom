@@ -1,4 +1,44 @@
 <?php
+// $Id$
+
+/**
+ * @file
+ * This module integrates the Cloud Zoom JQuery library from:
+ * http://www.professorcloud.com/mainsite/cloud-zoom.htm
+ */
+
+
+/**
+ * Implementation of hook_menu().
+ */
+function cloud_zoom_menu() {
+  $items = array();
+
+  $items['admin/content/cloudzoom'] = array(
+    'title' => 'Cloud Zoom Configuration',
+    'description' => 'Configure the Cloud Zoom field display features',
+    'page callback' => 'cloud_zoom_field_admin',
+    'file' => 'cloud_zoom.admin.inc',
+    'access arguments' => array('configure cloud zoom field display'),
+  );
+
+  $items['admin/content/cloudzoom/%/%/%/edit'] = array(
+    'title' => 'Cloud Zoom Configuration',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('cloud_zoom_field_admin_edit_form', 3, 4, 5),
+    'file' => 'cloud_zoom.admin.inc',
+    'access arguments' => array('configure cloud zoom field display'),
+    'type' => MENU_CALLBACK
+  );
+
+
+  return $items;
+}
+
+
+function cloud_zoom_perm() {
+  return array('configure cloud zoom field display');
+}
 
 /**
  * Implementation of hook_requirements().
@@ -91,6 +131,43 @@ function theme_cloud_zoom_formatter_imagefield($element) {
   // Theme the preview image using imagecache
   $small = theme('imagecache', $view_preset, $element['#item']['filepath']);
 
+  // Get the settings to see if there are any non-defaults to apply
+  $default_settings = _cloud_zoom_field_default_settings();
+  $settings = variable_get('cloud_zoom_field_settings', array());
+
+  // TODO: Not safe to assume Full Display
+  $key = $element['#node']->type .'-'. $element['#field_name'] .'-full';
+
+  // Buld the Rel for the link, if there are any settings
+  $rel = '';
+  if (isset($settings[$key])) {
+    $rel = array();
+    foreach ($settings[$key] as $option => $val) {
+      $val = $default_settings[$option]['quoted'] ? "'{$val}'" : $val;
+      $rel[] = "{$option}: {$val}";
+    }
+    $rel = implode(', ', $rel);
+  }
+
+
   // Return the preview image as a link to the larger image with a cloud-zoom CSS class
-  return l($small, imagecache_create_path($zoom_preset, $element['#item']['filepath']), array('html' => TRUE, 'attributes' => array('class' => 'cloud-zoom')));
+  return l($small, imagecache_create_path($zoom_preset, $element['#item']['filepath']), array('html' => TRUE, 'attributes' => array('class' => 'cloud-zoom', 'rel' => $rel,), ));
+}
+
+
+function _cloud_zoom_field_default_settings() {
+  return array(
+    'zoomWidth'    => array('default' => 'auto',  'quoted' => TRUE,  'description' => 'The width of the zoom window in pixels. If \'auto\' is specified, the width will be the same as the small image.', ),
+    'zoomHeight'   => array('default' => 'auto',  'quoted' => TRUE,  'description' => 'The height of the zoom window in pixels. If \'auto\' is specified, the height will be the same as the small image.', ),
+    'position'     => array('default' => 'right', 'quoted' => TRUE,  'description' => 'Specifies the position of the zoom window relative to the small image. Allowable values are \'left\', \'right\', \'top\', \'bottom\', \'inside\' or you can specifiy the id of an html element to place the zoom window in e.g. position: \'element1\'', ),
+    'adjustX'      => array('default' => 0,       'quoted' => FALSE, 'description' => 'Allows you to fine tune the x-position of the zoom window in pixels.', ),
+    'adjustY'      => array('default' => 0,       'quoted' => FALSE, 'description' => 'Allows you to fine tune the y-position of the zoom window in pixels.', ),
+    'tint'         => array('default' => false,   'quoted' => FALSE, 'description' => 'Specifies a tint colour which will cover the small image. Colours should be specified in hex format, e.g. \'#aa00aa\'. Does not work with softFocus.', ),
+    'tintOpacity'  => array('default' => 0.5,     'quoted' => FALSE, 'description' => 'Opacity of the tint, where 0 is fully transparent, and 1 is fully opaque.', ),
+    'lensOpacity'  => array('default' => 0.5,     'quoted' => FALSE, 'description' => 'Opacity of the lens mouse pointer, where 0 is fully transparent, and 1 is fully opaque. In tint and soft-focus modes, it will always be transparent.', ),
+    'softFocus'    => array('default' => false,   'quoted' => FALSE, 'description' => 'Applies a subtle blur effect to the small image. Set to true or false. Does not work with tint.', ),
+    'smoothMove'   => array('default' => 3,       'quoted' => FALSE, 'description' => 'Amount of smoothness/drift of the zoom image as it moves. The higher the number, the smoother/more drifty the movement will be. 1 = no smoothing.', ),
+    'showTitle'    => array('default' => true,    'quoted' => FALSE, 'description' => 'Shows the title tag of the image. True or false.', ),
+    'titleOpacity' => array('default' => 0.5,     'quoted' => FALSE, 'description' => 'Specifies the opacity of the title if displayed, where 0 is fully transparent, and 1 is fully opaque.', ),
+  );
 }
