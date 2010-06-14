@@ -9,23 +9,33 @@
 
 
 /**
+ * Implementation of hook_help().
+ */
+function cloud_zoom_help($path, $args) {
+  switch ($path) {
+    case 'admin/settings/cloudzoom' :
+      return t('Available fields are listed below. You can modify the settings for each by clicking edit');
+  }
+}
+
+
+/**
  * Implementation of hook_menu().
  */
 function cloud_zoom_menu() {
   $items = array();
 
-  $items['admin/content/cloudzoom'] = array(
-    'title' => 'Cloud Zoom Configuration',
+  $items['admin/settings/cloudzoom'] = array(
+    'title' => 'Cloud Zoom',
     'description' => 'Configure the Cloud Zoom field display features',
     'page callback' => 'cloud_zoom_field_admin',
     'file' => 'cloud_zoom.admin.inc',
     'access arguments' => array('configure cloud zoom field display'),
   );
 
-  $items['admin/content/cloudzoom/%/%/%/edit'] = array(
-    'title' => 'Cloud Zoom Configuration',
+  $items['admin/settings/cloudzoom/%/edit'] = array(
     'page callback' => 'drupal_get_form',
-    'page arguments' => array('cloud_zoom_field_admin_edit_form', 3, 4, 5),
+    'page arguments' => array('cloud_zoom_field_admin_edit_form', 3),
     'file' => 'cloud_zoom.admin.inc',
     'access arguments' => array('configure cloud zoom field display'),
     'type' => MENU_CALLBACK
@@ -36,9 +46,17 @@ function cloud_zoom_menu() {
 }
 
 
-function cloud_zoom_perm() {
-  return array('configure cloud zoom field display');
+/**
+ * Implementation of hook_nodeapi().
+ */
+function cloud_zoom_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL) {
+  // If we're viewing the node, we set flags on the node to determin if its a full or teaser view
+  if ($op == 'view') {
+    $node->is_teaser = $a3;  // Teaser arg
+    $node->is_page = $a4;    // Page arg
+  }
 }
+
 
 /**
  * Implementation of hook_requirements().
@@ -119,6 +137,7 @@ function cloud_zoom_theme() {
  * Theme handler for the cloud_zoom effect
  */
 function theme_cloud_zoom_formatter_imagefield($element) {
+  // If the files aren't present, don't display anything
   if (!_cloud_zoom_files_present()) return;
 
   // Add the cloud zoom JS and CSS
@@ -135,8 +154,10 @@ function theme_cloud_zoom_formatter_imagefield($element) {
   $default_settings = _cloud_zoom_field_default_settings();
   $settings = variable_get('cloud_zoom_field_settings', array());
 
-  // TODO: Not safe to assume Full Display
-  $key = $element['#node']->type .'-'. $element['#field_name'] .'-full';
+  // TODO - How shall we handle Views theming the field individually?
+  // Define the key based on the "is_teaser" key set in the nodeapi above.
+  $view_type = (isset($element['#node']->is_teaser) && $element['#node']->is_teaser) ? 'teaser' : 'full';
+  $key = 'node-'. $element['#node']->type .'-'. $element['#field_name'] .'-'. $view_type;
 
   // Buld the Rel for the link, if there are any settings
   $rel = '';

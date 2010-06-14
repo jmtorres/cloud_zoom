@@ -11,22 +11,38 @@
  * The admin overview page callback - provides a table of fields configured with the cloud_zoom display
  */
 function cloud_zoom_field_admin() {
+  $settings = variable_get('cloud_zoom_field_settings', array());
+
+  $output = '';
   $fields = content_fields();
   $node_types = node_get_types();
 
   $rows = array();
   foreach ($fields as $field) {
-    foreach ($field['display_settings'] as $display_name => $settings) {
-      if (empty($settings)) continue;
+    foreach ($field['display_settings'] as $display_name => $display_settings) {
+      if (empty($display_settings)) continue;
 
-      $ops = l(t('Edit'), 'admin/content/cloudzoom/'. $field['type_name'] .'/'. $field['field_name'] .'/'. $display_name .'/edit');
+      if (drupal_substr($display_settings['format'], 0, 24) == 'imagefield__cloud_zoom__') {
+        $key = implode('-', array('node', $field['type_name'], $field['field_name'], $display_name));
+        $ops = l(t('Edit'), 'admin/settings/cloudzoom/'. $key .'/edit');
 
-      if (drupal_substr($settings['format'], 0, 24) == 'imagefield__cloud_zoom__') {
+        if (isset($settings[$key])) {
+          $items = array();
+          foreach ($settings[$key] as $k => $v) {
+            $items[] = t('!setting_name: !setting_value', array('!setting_name' => $k, '!setting_value' => $v));
+          }
+          $settings_list = theme('item_list', $items, t('Overrides'));
+        }
+        else {
+          $settings_list = t('Default Settings');
+        }
+
         $rows[] = array(
+          t('Node'),
           $node_types[$field['type_name']]->name,
-          $field['field_name'],
           $display_name,
-          'SETTINGS LIST',
+          $field['field_name'],
+          $settings_list,
           $ops,
         );
       }
@@ -35,36 +51,33 @@ function cloud_zoom_field_admin() {
 
   if (!empty($rows)) {
     $headers = array(
-      t('Content Type'),
-      t('Field Name'),
+      t('Type'),
+      t('ID'),
       t('Display Type'),
+      t('Field'),
       t('Settings'),
       t('Ops'),
     );
 
-    return theme('table', $headers, $rows);
+    $output .= theme('table', $headers, $rows);
   }
-  return '';
+
+  return $output;
 }
 
 
 /**
  * The edit form callback - provides editable fields for all the "default" options
  */
-function cloud_zoom_field_admin_edit_form($form_state, $node_type, $field_name, $display) {
+function cloud_zoom_field_admin_edit_form($form_state, $key) {
   $settings = variable_get('cloud_zoom_field_settings', array());
-  $key = $node_type .'-'. $field_name .'-'. $display;
 
   if (!isset($settings[$key])) {
     $settings[$key] = array();
   }
 
-
   $form = array();
-
-  $form['node_type']  = array('#type' => 'value', '#value' => $node_type);
-  $form['field_name'] = array('#type' => 'value', '#value' => $field_name);
-  $form['display']    = array('#type' => 'value', '#value' => $display);
+  $form['key'] = array('#type' => 'value', '#value' => $key);
 
   $form['settings'] = array(
     '#type' => 'fieldset',
@@ -146,7 +159,9 @@ function cloud_zoom_field_admin_edit_form_validate($form, &$form_state) {
  */
 function cloud_zoom_field_admin_edit_form_submit_reset($form, &$form_state) {
   $settings = variable_get('cloud_zoom_field_settings', array());
-  $key = $form_state['values']['node_type'] .'-'. $form_state['values']['field_name'] .'-'. $form_state['values']['display'];
+
+  $key = $form_state['values']['key'];
+
   if (isset($settings[$key])) {
     unset($settings[$key]);
   }
@@ -157,6 +172,8 @@ function cloud_zoom_field_admin_edit_form_submit_reset($form, &$form_state) {
   else {
     variable_set('cloud_zoom_field_settings', $settings);
   }
+
+  $form_state['redirect'] = 'admin/settings/cloudzoom';
 }
 
 
@@ -168,7 +185,7 @@ function cloud_zoom_field_admin_edit_form_submit_save($form, &$form_state) {
 
   $settings = variable_get('cloud_zoom_field_settings', array());
 
-  $key = $form_state['values']['node_type'] .'-'. $form_state['values']['field_name'] .'-'. $form_state['values']['display'];
+  $key = $form_state['values']['key'];
 
   $settings[$key] = array();
 
@@ -188,4 +205,6 @@ function cloud_zoom_field_admin_edit_form_submit_save($form, &$form_state) {
   else {
     variable_set('cloud_zoom_field_settings', $settings);
   }
+
+  $form_state['redirect'] = 'admin/settings/cloudzoom';
 }
