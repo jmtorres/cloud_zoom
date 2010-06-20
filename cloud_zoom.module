@@ -27,15 +27,39 @@ function cloud_zoom_menu() {
 
   $items['admin/settings/cloudzoom'] = array(
     'title' => 'Cloud Zoom',
-    'description' => 'Configure the Cloud Zoom field display features',
-    'page callback' => 'cloud_zoom_field_admin',
+    'description' => 'Configure the Cloud Zoom display features',
+    'page callback' => 'cloud_zoom_admin_overview',
     'file' => 'cloud_zoom.admin.inc',
     'access arguments' => array('configure cloud zoom field display'),
   );
 
-  $items['admin/settings/cloudzoom/%/edit'] = array(
+  $items['admin/settings/cloudzoom/overview'] = array(
+    'title' => 'Overview',
+    'access arguments' => array('configure cloud zoom field display'),
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'weight' => -10,
+  );
+
+  $items['admin/settings/cloudzoom/add'] = array(
+    'title' => 'Add',
     'page callback' => 'drupal_get_form',
-    'page arguments' => array('cloud_zoom_field_admin_edit_form', 3),
+    'page arguments' => array('cloud_zoom_admin_preset_add_form'),
+    'file' => 'cloud_zoom.admin.inc',
+    'access arguments' => array('configure cloud zoom field display'),
+    'type' => MENU_LOCAL_TASK,
+  );
+
+  $items['admin/settings/cloudzoom/edit/%'] = array(
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('cloud_zoom_admin_preset_edit_form', 4),
+    'file' => 'cloud_zoom.admin.inc',
+    'access arguments' => array('configure cloud zoom field display'),
+    'type' => MENU_CALLBACK
+  );
+
+  $items['admin/settings/cloudzoom/delete/%'] = array(
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('cloud_zoom_admin_preset_delete_confirm', 4),
     'file' => 'cloud_zoom.admin.inc',
     'access arguments' => array('configure cloud zoom field display'),
     'type' => MENU_CALLBACK
@@ -43,18 +67,6 @@ function cloud_zoom_menu() {
 
 
   return $items;
-}
-
-
-/**
- * Implementation of hook_nodeapi().
- */
-function cloud_zoom_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL) {
-  // If we're viewing the node, we set flags on the node to determin if its a full or teaser view
-  if ($op == 'view') {
-    $node->is_teaser = $a3;  // Teaser arg
-    $node->is_page = $a4;    // Page arg
-  }
 }
 
 
@@ -92,15 +104,13 @@ function _cloud_zoom_files_present() {
 function cloud_zoom_field_formatter_info() {
   $formatters = array();
 
-  // Load the rules and build a "grid" of a->b settings.
-  $rules = imagecache_presets();
-  foreach ($rules as $outer_preset_id => $outer_preset_info) {
-    foreach ($rules as $inner_preset_id => $inner_preset_info) {
-      $formatters['imagefield__cloud_zoom__'. $outer_preset_info['presetname'] .'__'. $inner_preset_info['presetname']] = array(
-        'label' => t('Cloud Zoom: !outer -> !inner', array('!outer' => $outer_preset_info['presetname'], '!inner' => $inner_preset_info['presetname'])),
-        'field types' => array('filefield'),
-      );
-    }
+  $settings = cloud_zoom_get_settings();
+
+  foreach ($settings as $key => $values) {
+    $formatters['imagefield__cloud_zoom__'. $key] = array(
+      'label' => t('Cloud Zoom: !presetname', array('!presetname' => $key)),
+      'field types' => array('filefield'),
+    );
   }
 
   return $formatters;
@@ -118,15 +128,13 @@ function cloud_zoom_theme() {
     ),
   );
 
-  // Load the rules and build a "grid" of a->b settings.
-  $rules = imagecache_presets();
-  foreach ($rules as $outer_preset_id => $outer_preset_info) {
-    foreach ($rules as $inner_preset_id => $inner_preset_info) {
-      $theme['cloud_zoom_formatter_imagefield__cloud_zoom__'. $outer_preset_info['presetname'] .'__'. $inner_preset_info['presetname']] = array(
-        'arguments' => array('element' => NULL),
-        'function' => 'theme_cloud_zoom_formatter_imagefield',
-      );
-    }
+  $settings = cloud_zoom_get_settings();
+
+  foreach ($settings as $key => $values) {
+    $theme['cloud_zoom_formatter_imagefield__cloud_zoom__'. $key] = array(
+      'arguments' => array('element' => NULL),
+      'function' => 'theme_cloud_zoom_formatter_imagefield',
+    );
   }
 
   return $theme;
@@ -145,25 +153,20 @@ function theme_cloud_zoom_formatter_imagefield($element) {
   drupal_add_css(drupal_get_path('module', 'cloud_zoom') .'/cloud-zoom/cloud-zoom.css');
 
   // Get the view and zoom presets from the formatter ID.
-  list($tmp, $cloud_zoom_type, $view_preset, $zoom_preset) = explode('__', $element['#formatter'], 4);
-
-  // Theme the preview image using imagecache
-  $small = theme('imagecache', $view_preset, $element['#item']['filepath']);
+  list( , , $presetname) = explode('__', $element['#formatter'], 3);
 
   // Get the settings to see if there are any non-defaults to apply
-  $default_settings = _cloud_zoom_field_default_settings();
-  $settings = variable_get('cloud_zoom_field_settings', array());
+  $settings = cloud_zoom_get_settings();
 
-  // TODO - How shall we handle Views theming the field individually?
-  // Define the key based on the "is_teaser" key set in the nodeapi above.
-  $view_type = (isset($element['#node']->is_teaser) && $element['#node']->is_teaser) ? 'teaser' : 'full';
-  $key = 'node-'. $element['#node']->type .'-'. $element['#field_name'] .'-'. $view_type;
+  // Theme the preview image using imagecache
+  $small = theme('imagecache', $settings[$presetname]['view_preset'], $element['#item']['filepath']);
 
   // Buld the Rel for the link, if there are any settings
   $rel = '';
-  if (isset($settings[$key])) {
+  if (isset($settings[$presetname]['settings'])) {
+    $default_settings = _cloud_zoom_default_settings();
     $rel = array();
-    foreach ($settings[$key] as $option => $val) {
+    foreach ($settings[$presetname]['settings'] as $option => $val) {
       $val = $default_settings[$option]['quoted'] ? "'{$val}'" : $val;
       $rel[] = "{$option}: {$val}";
     }
@@ -172,23 +175,94 @@ function theme_cloud_zoom_formatter_imagefield($element) {
 
 
   // Return the preview image as a link to the larger image with a cloud-zoom CSS class
-  return l($small, imagecache_create_path($zoom_preset, $element['#item']['filepath']), array('html' => TRUE, 'attributes' => array('class' => 'cloud-zoom', 'rel' => $rel,), ));
+  $link_options = array('html' => TRUE, 'attributes' => array('class' => 'cloud-zoom', 'rel' => $rel));
+  return l($small, imagecache_create_path($settings[$presetname]['zoom_preset'], $element['#item']['filepath']), $link_options);
 }
 
 
-function _cloud_zoom_field_default_settings() {
+/**
+ * Implementation of hook_imagecache_default_presets().
+ */
+function cloud_zoom_imagecache_default_presets() {
+  return array(
+    array(
+      'presetname' => 'cloud_zoom_small',
+      'actions' => array(
+        array(
+          'weight' => 0,
+          'module' => 'cloud_zoom',
+          'action' => 'imagecache_scale',
+          'data' => array(
+            'width' => 240,
+            'height' => '',
+            'upscale' => 0,
+          )
+        )
+      ),
+    ),
+    array(
+      'presetname' => 'cloud_zoom_large',
+      'actions' => array(
+        array(
+          'weight' => 0,
+          'module' => 'cloud_zoom',
+          'action' => 'imagecache_scale',
+          'data' => array(
+            'width' => 768,
+            'height' => '',
+            'upscale' => 0,
+          )
+        )
+      ),
+    ),
+  );
+}
+
+
+/**
+ * Private function for the default settings
+ */
+function _cloud_zoom_default_settings() {
   return array(
     'zoomWidth'    => array('default' => 'auto',  'quoted' => TRUE,  'description' => 'The width of the zoom window in pixels. If \'auto\' is specified, the width will be the same as the small image.', ),
     'zoomHeight'   => array('default' => 'auto',  'quoted' => TRUE,  'description' => 'The height of the zoom window in pixels. If \'auto\' is specified, the height will be the same as the small image.', ),
     'position'     => array('default' => 'right', 'quoted' => TRUE,  'description' => 'Specifies the position of the zoom window relative to the small image. Allowable values are \'left\', \'right\', \'top\', \'bottom\', \'inside\' or you can specifiy the id of an html element to place the zoom window in e.g. position: \'element1\'', ),
     'adjustX'      => array('default' => 0,       'quoted' => FALSE, 'description' => 'Allows you to fine tune the x-position of the zoom window in pixels.', ),
     'adjustY'      => array('default' => 0,       'quoted' => FALSE, 'description' => 'Allows you to fine tune the y-position of the zoom window in pixels.', ),
-    'tint'         => array('default' => false,   'quoted' => FALSE, 'description' => 'Specifies a tint colour which will cover the small image. Colours should be specified in hex format, e.g. \'#aa00aa\'. Does not work with softFocus.', ),
+    'tint'         => array('default' => 'false', 'quoted' => FALSE, 'description' => 'Specifies a tint colour which will cover the small image. Colours should be specified in hex format, e.g. \'#aa00aa\'. Does not work with softFocus.', ),
     'tintOpacity'  => array('default' => 0.5,     'quoted' => FALSE, 'description' => 'Opacity of the tint, where 0 is fully transparent, and 1 is fully opaque.', ),
     'lensOpacity'  => array('default' => 0.5,     'quoted' => FALSE, 'description' => 'Opacity of the lens mouse pointer, where 0 is fully transparent, and 1 is fully opaque. In tint and soft-focus modes, it will always be transparent.', ),
-    'softFocus'    => array('default' => false,   'quoted' => FALSE, 'description' => 'Applies a subtle blur effect to the small image. Set to true or false. Does not work with tint.', ),
+    'softFocus'    => array('default' => 'false', 'quoted' => FALSE, 'description' => 'Applies a subtle blur effect to the small image. Set to true or false. Does not work with tint.', ),
     'smoothMove'   => array('default' => 3,       'quoted' => FALSE, 'description' => 'Amount of smoothness/drift of the zoom image as it moves. The higher the number, the smoother/more drifty the movement will be. 1 = no smoothing.', ),
-    'showTitle'    => array('default' => true,    'quoted' => FALSE, 'description' => 'Shows the title tag of the image. True or false.', ),
+    'showTitle'    => array('default' => 'true',  'quoted' => FALSE, 'description' => 'Shows the title tag of the image. True or false.', ),
     'titleOpacity' => array('default' => 0.5,     'quoted' => FALSE, 'description' => 'Specifies the opacity of the title if displayed, where 0 is fully transparent, and 1 is fully opaque.', ),
   );
+}
+
+/**
+ * Implementation of hook_cloud_zoom_preset_info().
+ */
+function cloud_zoom_cloud_zoom_preset_info() {
+  return array(
+    'default' => array('locked' => TRUE, 'settings' => array(), 'view_preset' => 'cloud_zoom_small', 'zoom_preset' => 'cloud_zoom_large'),
+  );
+}
+
+
+/**
+ * Function to pull out the cloud zoom settings
+ */
+function cloud_zoom_get_settings($reset = TRUE) {
+  static $settings = NULL;
+
+  if ($reset) {
+    $settings = NULL;
+  }
+
+  if (!isset($settings)) {
+    $settings = variable_get('cloud_zoom_settings', array());
+    $settings += module_invoke_all('cloud_zoom_preset_info');
+  }
+
+  return $settings;
 }
