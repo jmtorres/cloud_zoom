@@ -335,12 +335,12 @@ function cloud_zoom_admin_preset_delete_confirm(&$form_state, $key) {
   // If the key isn't set, return a 404
   if (!isset($settings[$key])) {
     drupal_not_found();
-    return FALSE;
+    exit;
   }
   // If the setting preset is set, and there is a locked setting which is also set, return a 403
   elseif (isset($settings[$key]['locked']) && $settings[$key]['locked']) {
     drupal_access_denied();
-    return FALSE;
+    exit;
   }
 
   // We're ok to continue - create a form and store the key (preset name)
