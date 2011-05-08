@@ -227,6 +227,10 @@ function cloud_zoom_cloud_zoom_preset_info() {
  * Settings are cached both statically and in the cache table for performance.
  */
 function cloud_zoom_get_settings($preset_name = NULL, $reset = FALSE) {
+  if (variable_get('cloud_zoom_schema_version', 0) < 6001) {
+    return array();
+  }
+
   // Static settings cache variable
   static $settings = NULL;
 

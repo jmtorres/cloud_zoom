@@ -150,5 +150,7 @@ function cloud_zoom_update_6001() {
   
   db_create_table($ret, 'cloud_zoom_presets', $table);
 
+  variable_set('cloud_zoom_schema_version', 6001);
+
   return $ret;
 }
