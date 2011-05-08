@@ -6,6 +6,13 @@
  * http://www.professorcloud.com/mainsite/cloud-zoom.htm
  */
 
+/**
+ * Preset Storage constants
+ */
+define('CLOUD_ZOOM_STORAGE_NORMAL',   0); // User Defined
+define('CLOUD_ZOOM_STORAGE_DEFAULT',  1); // Module Defined
+define('CLOUD_ZOOM_STORAGE_OVERRIDE', 2); // Module Defined, User overidden
+
 
 /**
  * Implementation of hook_help().
@@ -39,52 +46,56 @@ function cloud_zoom_menu() {
     'weight' => -10,
   );
 
+  $base = array(
+    'title callback' => 'cloud_zoom_admin_preset_title',
+    'access arguments' => array('configure cloud zoom field display'),
+    'page callback' => 'drupal_get_form',
+    'file' => 'cloud_zoom.admin.inc',
+    'type' => MENU_CALLBACK,
+  );
+
   $items['admin/settings/cloudzoom/add'] = array(
     'title' => 'Add',
-    'page callback' => 'drupal_get_form',
-    'page arguments' => array('cloud_zoom_admin_preset_add_form'),
-    'file' => 'cloud_zoom.admin.inc',
-    'access arguments' => array('configure cloud zoom field display'),
+    'title callback' => NULL,
+    'page arguments' => array('cloud_zoom_admin_preset_edit_form'),
     'type' => MENU_LOCAL_TASK,
-  );
+  ) + $base;
 
-  $items['admin/settings/cloudzoom/edit/%'] = array(
-    'page callback' => 'drupal_get_form',
-    'page arguments' => array('cloud_zoom_admin_preset_edit_form', 4),
-    'file' => 'cloud_zoom.admin.inc',
-    'access arguments' => array('configure cloud zoom field display'),
-    'type' => MENU_CALLBACK
-  );
+  $items['admin/settings/cloudzoom/%cloud_zoom_preset_name/edit'] = array(
+    'title arguments' => array(3, 'Edit'),
+    'page arguments' => array('cloud_zoom_admin_preset_edit_form', 3),
+  ) + $base;
 
-  $items['admin/settings/cloudzoom/delete/%'] = array(
-    'page callback' => 'drupal_get_form',
-    'page arguments' => array('cloud_zoom_admin_preset_delete_confirm', 4),
-    'file' => 'cloud_zoom.admin.inc',
-    'access arguments' => array('configure cloud zoom field display'),
-    'type' => MENU_CALLBACK
-  );
+  $items['admin/settings/cloudzoom/%cloud_zoom_preset_name/delete'] = array(
+    'title arguments' => array(3, 'Delete'),
+    'page arguments' => array('cloud_zoom_admin_preset_delete_confirm', 3),
+  ) + $base;
 
+  $items['admin/settings/cloudzoom/%cloud_zoom_preset_name/revert'] = array(
+    'title arguments' => array(3, 'Revert'),
+    'page arguments' => array('cloud_zoom_admin_preset_revert_confirm', 3),
+  ) + $base;
 
   return $items;
 }
 
 
 /**
- * Implementation of hook_requirements().
+ * Profile title callbac for add and edit pages
  */
-function cloud_zoom_requirements($phase) {
-  if ($phase == 'runtime') {
-    $files_present = _cloud_zoom_files_present();
+function cloud_zoom_admin_preset_title($preset, $operation) {
+  return t('Cloud Zoom - @operation - @name', array(
+    '@operation' => t($operation),
+    '@name' => $preset['name'],
+  ));
+}
 
-    return array(
-      'cloud_zoom_sourcefiles' => array(
-        'title' => t('Cloud Zoom - Sourcecode downloaded and present'),
-        'value' => $files_present ? t('Files Present') : t('Files Missing'),
-        'description' => $files_present ? NULL : t('Have the sourcecode files for Cloud Zoom been downloaded from <a href="http://www.professorcloud.com/mainsite/cloud-zoom.htm">Professor Cloud</a>'),
-        'severity' => $files_present ? REQUIREMENT_OK : REQUIREMENT_ERROR,
-      ),
-    );
-  }
+
+/**
+ * Preset loader. Used for Menu API wildcard loader.
+ */
+function cloud_zoom_preset_name_load($preset_name) {
+  return cloud_zoom_get_settings($preset_name);
 }
 
 
@@ -124,58 +135,24 @@ function cloud_zoom_theme() {
   $theme = array(
     'cloud_zoom_formatter_imagefield' => array(
       'arguments' => array('element' => NULL),
+      'file' => 'cloud_zoom.theme.inc',
+    ),
+    'cloud_zoom_admin_settings_table' => array(
+      'arguments' => array('element' => NULL),
+      'file' => 'cloud_zoom.theme.inc',
     ),
   );
 
-  $settings = cloud_zoom_get_settings();
+  $presets = cloud_zoom_get_settings();
 
-  foreach ($settings as $key => $values) {
-    $theme['cloud_zoom_formatter_imagefield__cloud_zoom__'. $key] = array(
+  foreach ($settings as $preset) {
+    $theme['cloud_zoom_formatter_imagefield__cloud_zoom__'. $preset['name']] = array(
       'arguments' => array('element' => NULL),
       'function' => 'theme_cloud_zoom_formatter_imagefield',
     );
   }
 
   return $theme;
-}
-
-
-/**
- * Theme handler for the cloud_zoom effect
- */
-function theme_cloud_zoom_formatter_imagefield($element) {
-  // If the files aren't present, don't display anything
-  if (!_cloud_zoom_files_present()) return;
-
-  // Add the cloud zoom JS and CSS
-  drupal_add_js(drupal_get_path('module', 'cloud_zoom') .'/cloud-zoom/cloud-zoom.1.0.2.min.js');
-  drupal_add_css(drupal_get_path('module', 'cloud_zoom') .'/cloud-zoom/cloud-zoom.css');
-
-  // Get the view and zoom presets from the formatter ID.
-  list( , , $presetname) = explode('__', $element['#formatter'], 3);
-
-  // Get the settings to see if there are any non-defaults to apply
-  $settings = cloud_zoom_get_settings();
-
-  // Theme the preview image using imagecache
-  $small = theme('imagecache', $settings[$presetname]['view_preset'], $element['#item']['filepath']);
-
-  // Buld the Rel for the link, if there are any settings
-  $rel = '';
-  if (isset($settings[$presetname]['settings'])) {
-    $default_settings = _cloud_zoom_default_settings();
-    $rel = array();
-    foreach ($settings[$presetname]['settings'] as $option => $val) {
-      $val = $default_settings[$option]['quoted'] ? "'{$val}'" : $val;
-      $rel[] = "{$option}: {$val}";
-    }
-    $rel = implode(', ', $rel);
-  }
-
-
-  // Return the preview image as a link to the larger image with a cloud-zoom CSS class
-  $link_options = array('html' => TRUE, 'attributes' => array('class' => 'cloud-zoom', 'rel' => $rel));
-  return l($small, imagecache_create_path($settings[$presetname]['zoom_preset'], $element['#item']['filepath']), $link_options);
 }
 
 
@@ -243,25 +220,89 @@ function _cloud_zoom_default_settings() {
  */
 function cloud_zoom_cloud_zoom_preset_info() {
   return array(
-    'default' => array('locked' => TRUE, 'settings' => array(), 'view_preset' => 'cloud_zoom_small', 'zoom_preset' => 'cloud_zoom_large'),
+    'default' => array(
+      'name' => 'default',
+      'settings' => array(),
+      'view_preset' => 'cloud_zoom_small',
+      'zoom_preset' => 'cloud_zoom_large',
+    ),
   );
 }
 
 
 /**
- * Function to pull out the cloud zoom settings
+ * Function to get the cloud_zoom settings
+ * Settings are cached both statically and in the cache table for performance.
  */
-function cloud_zoom_get_settings($reset = TRUE) {
+function cloud_zoom_get_settings($preset_name = NULL, $reset = FALSE) {
+  // Static settings cache variable
   static $settings = NULL;
 
+  // If we're resetting, clear static and cache table
   if ($reset) {
     $settings = NULL;
+    cache_clear_all('cloud_zoom:presets', 'cache');
   }
 
+  // If settings are not set, lets define them
   if (!isset($settings)) {
-    $settings = variable_get('cloud_zoom_settings', array());
-    $settings += module_invoke_all('cloud_zoom_preset_info');
+    // First, try to get from the cache table
+    if (($cache = cache_get('cloud_zoom:presets', 'cache')) && is_array($cache->data)) {
+      $settings = $cache->data;
+    }
+    // Nope, ok - lets make them from scratch
+    else {
+      // Initialize the settings
+      $settings = array();
+
+      // Get anything we have defined from the DB
+      $result = db_query('SELECT * FROM {cloud_zoom_presets}');
+      while ($preset = db_fetch_array($result)) {
+        // Mark as "normal" items
+        $preset['storage'] = CLOUD_ZOOM_STORAGE_NORMAL;
+        $preset['settings'] = unserialize($preset['settings']);
+
+        // Store the preset
+        $settings[$preset['name']] = $preset;
+      }
+
+      // Now loop over the hook to get any module defined presets, using
+      // hook_cloud_zoom_default_presets().
+      $default_presets = module_invoke_all('cloud_zoom_preset_info');
+
+      // Allow other modules to alter the module-defined presets using:
+      // hook_cloud_zoom_default_presets_alter(&$default_presets)
+      drupal_alter('cloud_zoom_preset_info', $default_presets);
+
+      // Add each defined preset to our list...
+      foreach ($default_presets as $preset) {
+        // ... but only if a name is set!
+        if (!empty($preset['name'])) {
+          // If the name is already in our settings, then we have overridden a module-level item
+          if (isset($settings[$preset['name']])) {
+            // Set the preset as 'overridden', but do not store the module defined preset
+            $settings[$preset['name']]['storage'] = CLOUD_ZOOM_STORAGE_OVERRIDE;
+          }
+          // Otherwise, it's a custom preset
+          else {
+            // Store the preset as a default store
+            $preset['storage'] = CLOUD_ZOOM_STORAGE_DEFAULT;
+            $settings[$preset['name']] = $preset;
+          }
+        }
+      }
+
+      // Cache it for later use
+      cache_set('cloud_zoom:presets', $settings);
+    }
   }
 
+  // Did we ask for a SPECIFIC preset by name? If so, return it (or FALSE if
+  // it is not available)
+  if ($preset_name) {
+    return isset($settings[$preset_name]) ? $settings[$preset_name] : FALSE;
+  }
+
+  // Otherwise, return ALL settings
   return $settings;
 }
