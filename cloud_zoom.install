@@ -1,0 +1,153 @@
+<?php
+
+/**
+ * @file cloud_zoom.install
+ * Contains all the install hooks required - such as schema, install and uninstall
+ */
+
+/**
+ * Implementation of hook_requirements().
+ */
+function cloud_zoom_requirements($phase) {
+  $requirements = array();
+  $t = get_t();
+
+  switch ($phase) {
+    case 'runtime' :
+    case 'install' :
+      $requirements['cloud_zoom'] = array(
+        'title' => $t('Cloud Zoom'),
+      );
+
+      // Load the common include for the dependency check
+      module_load_include('inc', 'cloud_zoom', 'cloud_zoom.common');
+
+      if ( ($check = cloud_zoom_dependency_check()) && $check['exists']) {
+        $requirements['cloud_zoom'] += array(
+          'description' => $t(
+            'The JQuery Cloud Zoom library is required for this module to work and has been found in %path', array(
+              '!link' => l($t('JQuery Cloud Zoom'), 'http://www.professorcloud.com/mainsite/cloud-zoom.htm', array('absolute' => TRUE)),
+              '%path' => $check['path'],
+            )
+          ),
+          'value' => $t('Found (Version: %version)', array(
+            '%version' => cloud_zoom_get_jquery_cycle_version($check['filepath']),
+          )),
+          'severity' => REQUIREMENT_OK,
+        );
+      }
+      else {
+        $requirements['cloud_zoom'] += array(
+          'description' => $t(
+            "The !link library is required for this module to work.<br />\n".
+            "Please download and unzip into: %path<br />\n".
+            'The cloud-zoom.1.0.2.min.js file should be found at: %filepath', array(
+              '!link' => l($t('JQuery Cloud Zoom'), 'http://www.professorcloud.com/mainsite/cloud-zoom.htm', array('absolute' => TRUE)),
+              '%path' => url($check['path']),
+              '%filepath' => url($check['filepath']),
+            )
+          ),
+          'value' => $t('Not Found'),
+          'severity' => REQUIREMENT_ERROR,
+        );
+      }
+      break;
+  }
+
+  return $requirements;
+}
+
+
+/**
+ * Implementation of hook_schema()
+ */
+function cloud_zoom_schema() {
+  $schema['cloud_zoom_presets'] = array(
+    'description' => 'Stored Cloud Zoom presets.',
+    'fields' => array(
+      'name' => array(
+        'description' => t('The primary identifier for an cloud_zoom preset.'),
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+      ),
+      'view_preset' => array(
+        'description' => t('The preset name for the smaller images.'),
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+      ),
+      'zoom_preset' => array(
+        'description' => t('The preset name for the zoomed image.'),
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+      ),
+      'settings' => array(
+        'description' => t('Serialized preset settings.'),
+        'type' => 'text',
+        'size' => 'big',
+        'not null' => FALSE,
+      ),
+    ),
+    'primary key' => array('name'),
+  );
+
+  return $schema;
+}
+
+/**
+ * Implementation of hook_install().
+ */
+function cloud_zoom_install() {
+  drupal_install_schema('cloud_zoom');
+}
+
+/**
+ * Implementation of hook_uninstall().
+ */
+function cloud_zoom_uninstall() {
+  drupal_uninstall_schema('cloud_zoom');
+}
+
+
+/**
+ * Implementations of hook_update_n().
+ */
+function cloud_zoom_update_6001() {
+  $ret = array();
+
+  $table = array(
+    'fields' => array(
+      'name' => array(
+        'description' => t('The primary identifier for an cloud_zoom preset.'),
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+      ),
+      'view_preset' => array(
+        'description' => t('The preset name for the smaller images.'),
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+      ),
+      'zoom_preset' => array(
+        'description' => t('The preset name for the zoomed image.'),
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+      ),
+      'settings' => array(
+        'description' => t('Serialized preset settings.'),
+        'type' => 'text',
+        'size' => 'big',
+        'not null' => FALSE,
+      ),
+    ),
+    'primary key' => array('name'),
+  );
+  
+  db_create_table($ret, 'cloud_zoom_presets', $table);
+
+  return $ret;
+}
