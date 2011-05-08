@@ -35,7 +35,7 @@ function theme_cloud_zoom_formatter_imagefield($element) {
   $preset = cloud_zoom_get_settings($presetname);
 
   // Theme the preview image using imagecache
-  $small = theme('imagecache', $preset['view_preset'], $element['#item']['filepath']);
+  $small = theme('imagecache', $preset['view_preset'], $element['#item']['filepath'], $element['#item']['data']['alt'], $element['#item']['data']['title']);
 
   // Buld the Rel for the link, if there are any settings
   $rel = '';
