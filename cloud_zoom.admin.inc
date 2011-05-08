@@ -304,15 +304,13 @@ function cloud_zoom_admin_preset_edit_form_submit_save(&$form, &$form_state) {
 
   // Get the default settings
   $defaults = _cloud_zoom_default_settings();
-  dpm($defaults);
+
   // For every submitted setting, if the value equals the default then unset it
-  dpm($preset);
   foreach ($preset['settings'] as $option => $val) {
     if ($val == $defaults[$option]['default']) {
       unset($preset['settings'][$option]);
     }
   }
-  dpm($preset);
 
   // Write changes
   drupal_write_record('cloud_zoom_presets', $preset);
