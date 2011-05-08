@@ -133,7 +133,7 @@ function cloud_zoom_admin_preset_edit_form(&$form_state, $preset = NULL) {
     '#required' => TRUE,
   );
 
-  if (isset($preset['storage']) && $preset['storage'] == CLOUD_ZOOM_STORAGE_NORMAL) {
+  if (isset($preset['storage']) && $preset['storage'] != CLOUD_ZOOM_STORAGE_NORMAL) {
     $form['preset']['name']['#type'] = 'item';
     $form['preset']['name']['#value'] = $form['preset']['name']['#default_value'];
   }
@@ -174,6 +174,7 @@ function cloud_zoom_admin_preset_edit_form(&$form_state, $preset = NULL) {
   $form['preset']['settings'] = array(
     '#type' => 'fieldset',
     '#title' => t('Settings'),
+    '#theme' => 'cloud_zoom_admin_settings_table',
   );
 
   // Create a form element for every "default" setting to allow override
@@ -208,9 +209,10 @@ function cloud_zoom_admin_preset_edit_form(&$form_state, $preset = NULL) {
 
       case 'softFocus' :
       case 'showTitle' :
-        $field_settings['#options'] = array(0 => 'false', 1 => 'true');
+        $field_settings['#options'] = array('false' => 'false', 'true' => 'true');
         $field_settings['#type'] = 'select';
         $field_settings['#size'] = 1;
+        $field_settings['#maxlength'] = NULL;
         break;
     }
 
@@ -250,12 +252,12 @@ function cloud_zoom_admin_preset_edit_form(&$form_state, $preset = NULL) {
  */
 function cloud_zoom_admin_preset_edit_form_validate(&$form, &$form_state) {
   // Do not validate the name if it is not set
-  if (!isset($form_state['values']['name'])) {
+  if (!isset($form_state['values']['preset']['name'])) {
     return;
   }
 
   // Get the name out for easier reference
-  $name = $form_state['values']['name'];
+  $name = $form_state['values']['preset']['name'];
 
   // If the name contains any non a-z, 0-9 and underscore characters then set an error and return (dont bother checking anything else)
   if (preg_match('/[^a-z0-9_]/', $name)) {
@@ -293,7 +295,10 @@ function cloud_zoom_admin_preset_edit_form_submit_save(&$form, &$form_state) {
   // Get the preset from the form
   $preset = $form_state['values']['preset'];
 
+  // If there is an original preset, delete the old name
   if (isset($form['#original_preset'])) {
+    // If the original preset isn't 'normal' (ie it IS module defined)
+    // Then lock the name
     if ($form['#original_preset']['storage'] != CLOUD_ZOOM_STORAGE_NORMAL) {
       $preset['name'] = $form['#original_preset']['name'];
     }
@@ -358,7 +363,7 @@ function cloud_zoom_admin_preset_delete_confirm_submit(&$form, &$form_state) {
   db_query("DELETE FROM {cloud_zoom_presets} WHERE name = '%s'", $preset['name']);
 
   // Wipe any caches and static storage
-  cloud_zoom_get_settings(TRUE);
+  cloud_zoom_get_settings(NULL, TRUE);
   drupal_rebuild_theme_registry();
   content_clear_type_cache();
 
@@ -366,4 +371,30 @@ function cloud_zoom_admin_preset_delete_confirm_submit(&$form, &$form_state) {
   $form_state['redirect'] = 'admin/settings/cloudzoom';
 }
 
-// TODO: Revert Confirm Form
+
+/**
+ * Revert preset confirm form
+ */
+function cloud_zoom_admin_preset_revert_confirm(&$form_state, $preset) {
+  // We're ok to continue - create a form and store the preset
+  $form = array();
+  $form['#original_preset'] = $preset;
+
+  // Return the form through the confirm_form function
+  return confirm_form(
+    $form,
+    t('Are you sure you want to revert the Cloud Zoom Preset %preset?', array('%preset' => $preset['name'])),
+    'admin/settings/cloudzoom',
+    t('Reverting a preset cannot be undone'),
+    t('Delete'),
+    t('Cancel'));
+}
+
+
+/**
+ * Revert preset confirm form submit hanlder
+ */
+function cloud_zoom_admin_preset_revert_confirm_submit(&$form, &$form_state) {
+  // Reverting IS deleteing...
+  cloud_zoom_admin_preset_delete_confirm_submit($form, $form_state);
+}

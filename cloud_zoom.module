@@ -100,15 +100,6 @@ function cloud_zoom_preset_name_load($preset_name) {
 
 
 /**
- * Internal Helper function to check if the required source code is present
- */
-function _cloud_zoom_files_present() {
-  $path = drupal_get_path('module', 'cloud_zoom');
-  return (file_exists($path .'/cloud-zoom/cloud-zoom.1.0.2.min.js') && file_exists($path .'/cloud-zoom/cloud-zoom.css'));
-}
-
-
-/**
  * Implementation of hook_field_formatter().
  */
 function cloud_zoom_field_formatter_info() {
@@ -145,10 +136,11 @@ function cloud_zoom_theme() {
 
   $presets = cloud_zoom_get_settings();
 
-  foreach ($settings as $preset) {
+  foreach ($presets as $preset) {
     $theme['cloud_zoom_formatter_imagefield__cloud_zoom__'. $preset['name']] = array(
       'arguments' => array('element' => NULL),
       'function' => 'theme_cloud_zoom_formatter_imagefield',
+      'file' => 'cloud_zoom.theme.inc',
     );
   }
 
@@ -202,7 +194,7 @@ function _cloud_zoom_default_settings() {
   return array(
     'zoomWidth'    => array('default' => 'auto',  'quoted' => TRUE,  'description' => 'The width of the zoom window in pixels. If \'auto\' is specified, the width will be the same as the small image.', ),
     'zoomHeight'   => array('default' => 'auto',  'quoted' => TRUE,  'description' => 'The height of the zoom window in pixels. If \'auto\' is specified, the height will be the same as the small image.', ),
-    'position'     => array('default' => 'right', 'quoted' => TRUE,  'description' => 'Specifies the position of the zoom window relative to the small image. Allowable values are \'left\', \'right\', \'top\', \'bottom\', \'inside\' or you can specifiy the id of an html element to place the zoom window in e.g. position: \'element1\'', ),
+    'position'     => array('default' => 'right', 'quoted' => TRUE,  'description' => 'Specifies the position of the zoom window relative to the small image. <br />Allowable values are \'left\', \'right\', \'top\', \'bottom\', \'inside\' or you can specifiy the id of an html element to place the zoom window in e.g. position: \'element1\'', ),
     'adjustX'      => array('default' => 0,       'quoted' => FALSE, 'description' => 'Allows you to fine tune the x-position of the zoom window in pixels.', ),
     'adjustY'      => array('default' => 0,       'quoted' => FALSE, 'description' => 'Allows you to fine tune the y-position of the zoom window in pixels.', ),
     'tint'         => array('default' => 'false', 'quoted' => FALSE, 'description' => 'Specifies a tint colour which will cover the small image. Colours should be specified in hex format, e.g. \'#aa00aa\'. Does not work with softFocus.', ),
