@@ -9,12 +9,12 @@
 /**
  * Implementation of hook_features_export().
  */
-function cloud_zoom_profile_features_export($data, &$export, $module_name) {
+function cloud_zoom_preset_features_export($data, &$export, $module_name) {
   $pipe = array();
 
-  foreach($data as $profile) {
-    if ($settings = cloud_zoom_get_settings($profile)) {
-      $export['features']['cloud_zoom_preset'][$profile] = $profile;
+  foreach($data as $preset) {
+    if ($settings = cloud_zoom_get_settings($preset)) {
+      $export['features']['cloud_zoom_preset'][$preset] = $preset;
       $pipe['imagecache'][] = $settings['view_preset'];
       $pipe['imagecache'][] = $settings['zoom_preset'];
     }
@@ -35,10 +35,10 @@ function cloud_zoom_profile_features_export($data, &$export, $module_name) {
 /**
  * Implementation of hook_features_export_options().
  */
-function cloud_zoom_profile_features_export_options() {
+function cloud_zoom_preset_features_export_options() {
   $options = array();
-  foreach (cloud_zoom_get_settings() as $profile) {
-    $options[$profile['name']] = $profile['name'];
+  foreach (cloud_zoom_get_settings() as $preset) {
+    $options[$preset['name']] = $preset['name'];
   }
   return $options;
 }
@@ -47,7 +47,7 @@ function cloud_zoom_profile_features_export_options() {
 /**
  * Implementation of hook_features_export_options_render().
  */
-function cloud_zoom_profile_features_export_render($module_name, $data) {
+function cloud_zoom_preset_features_export_render($module_name, $data) {
   $items = array();
 
   foreach ($data as $name) {
@@ -64,14 +64,14 @@ function cloud_zoom_profile_features_export_render($module_name, $data) {
 /**
  * Implementation of hook_features_revert().
  */
-function cloud_zoom_profile_features_revert($module) {
+function cloud_zoom_preset_features_revert($module) {
   // Get the settings for the Feature module
-  $profiles = module_invoke($module, 'cloud_zoom_preset_info');
+  $presets = module_invoke($module, 'cloud_zoom_preset_info');
 
-  // For each profile, if there are any, delete any overriden settings
-  if (!empty($profiles)) {
-    foreach ($profiles as $profile) {
-      db_query("DELETE FROM {cloud_zoom_profiles} WHERE name = '%s'", $profile['name']);
+  // For each preset, if there are any, delete any overriden settings
+  if (!empty($presets)) {
+    foreach ($presets as $preset) {
+      db_query("DELETE FROM {cloud_zoom_presets} WHERE name = '%s'", $preset['name']);
     }
   }
 
