@@ -10,6 +10,11 @@
  * Theme handler for the cloud_zoom effect
  */
 function theme_cloud_zoom_formatter_imagefield($element) {
+  // If there is no item, return blank
+  if (empty($element['#item'])) {
+    return '';
+  }
+
   // Load the common include for the dependency check
   module_load_include('inc', 'cloud_zoom', 'cloud_zoom.common');
 
