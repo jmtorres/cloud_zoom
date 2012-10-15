@@ -515,11 +515,14 @@ function theme_cloud_zoom_image($variables) {
   return l($slide, $zoomed, array('html' => TRUE, 'attributes' => array('class' => 'cloud-zoom', 'rel' => $rel)));
 }
 
+
 /**
  * Theme handler for the cloud_zoom effect with gallery
  */
 function theme_cloud_zoom_image_gallery($variables) {
-  cloud_zoom_include();
+  // Add the Cloud Zoom Library
+  drupal_add_library('cloud_zoom', 'cloud-zoom');
+
   $items = $variables['items'];
 
   // Create the gallery thumb syntax of cloud zoom.
