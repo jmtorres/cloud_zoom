@@ -27,6 +27,19 @@ function cloud_zoom_requirements($phase) {
 
 
 /**
+ * Implements hook_libraries_info().
+ */
+function cloud_zoom_libraries_info() {
+  $libraries['cloud-zoom'] = array(
+    'name' => 'Cloud Zoom',
+    'vendor url' => 'http://www.professorcloud.com/mainsite/cloud-zoom.htm',
+    'download url' => 'http://www.professorcloud.com/downloads/cloud-zoom.1.0.2.zip',
+  );
+  return $libraries;
+}
+
+
+/**
  * Retrieve the expected path to the example library.
  *
  * @return
