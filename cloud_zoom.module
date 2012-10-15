@@ -12,7 +12,7 @@
  */
 function cloud_zoom_requirements($phase) {
   if ($phase == 'runtime') {
-    $files_present = _cloud_zoom_files_present();
+    $files_present = _cloud_zoom_get_path();
 
     return array(
       'cloud_zoom_sourcefiles' => array(
@@ -27,13 +27,45 @@ function cloud_zoom_requirements($phase) {
 
 
 /**
- * Internal Helper function to check if the required source code is present
+ * Retrieve the expected path to the example library.
+ *
+ * @return
+ *   The path where the example library is to be expected to be installed.
+ *   Returns FALSE if the library is not found.
  */
-function _cloud_zoom_files_present() {
-  $path = drupal_get_path('module', 'cloud_zoom');
-  return (file_exists($path .'/cloud-zoom/cloud-zoom.1.0.2.min.js') && file_exists($path .'/cloud-zoom/cloud-zoom.css'));
-}
+function _cloud_zoom_get_path() {
+  $path = FALSE;
 
+  // Check if the libraries module is installed and if the example library is
+  // being supplied through the libraries module.
+  if (module_exists('libraries')) {
+    // Check if the library is found. If no library is found libraries_get_path()
+    // will still return sites/all/libraries as a path.
+    $libraries = libraries_get_libraries();
+    if (isset($libraries['cloud-zoom'])) {
+      $path = libraries_get_path('cloud-zoom');
+    }
+  }
+
+  // Check in the cloud-zoom directory within the module directory.
+  if (!$path) {
+    $path = drupal_get_path('module', 'cloud_zoom');
+    $path = (file_exists($path .'/cloud-zoom/cloud-zoom.1.0.2.min.js') && file_exists($path .'/cloud-zoom/cloud-zoom.css')) ? drupal_get_path('module', 'cloud_zoom') . '/cloud-zoom' : FALSE;
+  }
+
+  // Check if the example library is in the include path.
+  if (!$path) {
+    $include_paths = explode(PATH_SEPARATOR, get_include_path());
+      foreach ($include_paths as $include_path) {
+        if (is_dir($include_path .'/example')) {
+          $path = $include_path .'/example';
+          continue;
+        }
+      }
+  }
+
+  return $path;
+}
 
 /**
  * Implementation of hook_field_formatter().
@@ -102,8 +134,9 @@ function cloud_zoom_theme() {
  */
 function theme_cloud_zoom_image($variables) {
   // Add the cloud zoom JS and CSS
-  drupal_add_js(drupal_get_path('module', 'cloud_zoom') .'/cloud-zoom/cloud-zoom.1.0.2.min.js');
-  drupal_add_css(drupal_get_path('module', 'cloud_zoom') .'/cloud-zoom/cloud-zoom.css');
+  $path = _cloud_zoom_get_path();
+  drupal_add_js($path . '/cloud-zoom.1.0.2.min.js');
+  drupal_add_css($path . '/cloud-zoom.css');
 
   $item = $variables['item'];
 
