@@ -1,6 +1,9 @@
 <?php
 
-define('CLOUD_ZOOM_DOWNLOAD_URI', 'http://www.professorcloud.com/downloads/cloud-zoom.1.0.2.zip');
+/**
+ * @file
+ * This file integrates Cloud Zoom with Drush and provides a helper function for getting the library.
+ */
 
 function cloud_zoom_drush_command() {
   return array(

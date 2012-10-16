@@ -6,20 +6,33 @@
  * http://www.professorcloud.com/mainsite/cloud-zoom.htm
  */
 
+define('CLOUD_ZOOM_DOWNLOAD_URI', 'http://www.professorcloud.com/downloads/cloud-zoom.1.0.3.zip');
 
 /**
  * Implementation of hook_requirements().
  */
 function cloud_zoom_requirements($phase) {
   if ($phase == 'runtime') {
-    $files_present = _cloud_zoom_get_path();
+    $path = _cloud_zoom_get_path();
+    $version = 'N/A';
+
+    if ($path) {
+      if ($file = _cloud_zoom_check_path($path)) {
+        $file = array_shift($file);
+        $content = file_get_contents($file->uri);
+        preg_match('#Cloud Zoom V(?P<version>[0-9\.]+)#', $content, $matches);
+        if (isset($matches['version'])) {
+          $version = $matches['version'];
+        }
+      }
+    }
 
     return array(
       'cloud_zoom_sourcefiles' => array(
-        'title' => t('Cloud Zoom - Sourcecode downloaded and present'),
-        'value' => $files_present ? t('Files Present') : t('Files Missing'),
-        'description' => $files_present ? NULL : t('Have the sourcecode files for Cloud Zoom been downloaded from <a href="http://www.professorcloud.com/mainsite/cloud-zoom.htm">Professor Cloud</a>'),
-        'severity' => $files_present ? REQUIREMENT_OK : REQUIREMENT_ERROR,
+        'title' => t('Cloud Zoom'),
+        'value' => $path ? check_plain($version) : t('Files Missing'),
+        'description' => $path ? t('Source files found in %path.', array('%path' => $path)) : t('Have the sourcecode files for Cloud Zoom been downloaded from !link?', array('!link' => l('Professor Cloud', CLOUD_ZOOM_DOWNLOAD_URI, array('external' => TRUE)))),
+        'severity' => $path ? REQUIREMENT_OK : REQUIREMENT_ERROR,
       ),
     );
   }
@@ -33,7 +46,7 @@ function cloud_zoom_libraries_info() {
   $libraries['cloud-zoom'] = array(
     'name' => 'Cloud Zoom',
     'vendor url' => 'http://www.professorcloud.com/mainsite/cloud-zoom.htm',
-    'download url' => 'http://www.professorcloud.com/downloads/cloud-zoom.1.0.2.zip',
+    'download url' => CLOUD_ZOOM_DOWNLOAD_URI,
   );
   return $libraries;
 }
@@ -45,6 +58,8 @@ function cloud_zoom_libraries_info() {
 function cloud_zoom_library() {
   if ($path = _cloud_zoom_get_path()) {
     $module_path = drupal_get_path('module', 'cloud_zoom');
+    $library = array_shift(_cloud_zoom_check_path($path));
+    $library_base = basename($library->uri);
 
     return array(
       'cloud-zoom' => array(
@@ -52,11 +67,11 @@ function cloud_zoom_library() {
         'website' => 'http://www.professorcloud.com/mainsite/cloud-zoom.htm',
         'version' => '1.0.2',
         'js' => array(
-          $path .'/cloud-zoom.1.0.2.min.js' => array('group' => JS_LIBRARY),
+          $library->uri => array('group' => JS_LIBRARY),
           $module_path .'/js/cloud_zoom.js' => array(),
         ),
         'css' => array(
-          $path .'/cloud-zoom.css' => array('group' => JS_LIBRARY),
+          $library_base .'/cloud-zoom.css' => array('group' => JS_LIBRARY),
           $module_path .'/css/cloud_zoom.css' => array(),
         ),
         'dependencies' => array(
@@ -70,6 +85,23 @@ function cloud_zoom_library() {
 
 
 /**
+ * Internal function for checking for the cloud zoom JS in a path
+ */
+function _cloud_zoom_check_path($path) {
+  static $cache;
+  if (!isset($cache)) {
+    $cache['paths'] = &drupal_static(__FUNCTION__);
+  }
+
+  if (!isset($cache['paths'][$path])) {
+    $cache['paths'][$path] = file_scan_directory($path, '/cloud-zoom\..+\.min\.js/');
+  }
+
+  return $cache['paths'][$path];
+}
+
+
+/**
  * Retrieve the expected path to the example library.
  *
  * @return
@@ -77,6 +109,12 @@ function cloud_zoom_library() {
  *   Returns FALSE if the library is not found.
  */
 function _cloud_zoom_get_path() {
+  static $path = NULL;
+
+  if (isset($path)) {
+    return $path;
+  }
+
   $path = FALSE;
 
   // Check if the libraries module is installed and if the example library is
@@ -86,14 +124,19 @@ function _cloud_zoom_get_path() {
     // will still return sites/all/libraries as a path.
     $libraries = libraries_get_libraries();
     if (isset($libraries['cloud-zoom'])) {
-      $path = libraries_get_path('cloud-zoom');
+      $libraries_path = libraries_get_path('cloud-zoom');
+      if (_cloud_zoom_check_path($libraries_path)) {
+        $path = $libraries_path;
+      }
     }
   }
 
   // Check in the cloud-zoom directory within the module directory.
   if (!$path) {
-    $path = drupal_get_path('module', 'cloud_zoom');
-    $path = (file_exists($path .'/cloud-zoom/cloud-zoom.1.0.2.min.js') && file_exists($path .'/cloud-zoom/cloud-zoom.css')) ? drupal_get_path('module', 'cloud_zoom') . '/cloud-zoom' : FALSE;
+    $module_path = drupal_get_path('module', 'cloud_zoom') .'/cloud-zoom';
+    if (_cloud_zoom_check_path($module_path)) {
+      $path = $module_path;
+    }
   }
 
   // Check if the example library is in the include path.
