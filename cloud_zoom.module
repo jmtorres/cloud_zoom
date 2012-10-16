@@ -8,36 +8,6 @@
 
 define('CLOUD_ZOOM_DOWNLOAD_URI', 'http://www.professorcloud.com/downloads/cloud-zoom.1.0.3.zip');
 
-/**
- * Implementation of hook_requirements().
- */
-function cloud_zoom_requirements($phase) {
-  if ($phase == 'runtime') {
-    $path = _cloud_zoom_get_path();
-    $version = 'N/A';
-
-    if ($path) {
-      if ($file = _cloud_zoom_check_path($path)) {
-        $file = array_shift($file);
-        $content = file_get_contents($file->uri);
-        preg_match('#Cloud Zoom V(?P<version>[0-9\.]+)#', $content, $matches);
-        if (isset($matches['version'])) {
-          $version = $matches['version'];
-        }
-      }
-    }
-
-    return array(
-      'cloud_zoom_sourcefiles' => array(
-        'title' => t('Cloud Zoom'),
-        'value' => $path ? check_plain($version) : t('Files Missing'),
-        'description' => $path ? t('Source files found in %path.', array('%path' => $path)) : t('Have the sourcecode files for Cloud Zoom been downloaded from !link?', array('!link' => l('Professor Cloud', CLOUD_ZOOM_DOWNLOAD_URI, array('external' => TRUE)))),
-        'severity' => $path ? REQUIREMENT_OK : REQUIREMENT_ERROR,
-      ),
-    );
-  }
-}
-
 
 /**
  * Implements hook_libraries_info().
@@ -58,7 +28,7 @@ function cloud_zoom_libraries_info() {
 function cloud_zoom_library() {
   if ($path = _cloud_zoom_get_path()) {
     $module_path = drupal_get_path('module', 'cloud_zoom');
-    $library = array_shift(_cloud_zoom_check_path($path));
+    $library = _cloud_zoom_check_path($path);
     $library_base = basename($library->uri);
 
     return array(
@@ -88,15 +58,34 @@ function cloud_zoom_library() {
  * Internal function for checking for the cloud zoom JS in a path
  */
 function _cloud_zoom_check_path($path) {
+  // Use advanged static caching
   static $cache;
   if (!isset($cache)) {
     $cache['paths'] = &drupal_static(__FUNCTION__);
   }
 
+  // If this path hasn't been checked, check it now.
   if (!isset($cache['paths'][$path])) {
-    $cache['paths'][$path] = file_scan_directory($path, '/cloud-zoom\..+\.min\.js/');
+    // Scan the path for the file pattern
+    if ($file = file_scan_directory($path, '/cloud-zoom\..+\.min\.js/')) {
+      // If found, shift the entry out of the single-item (hopefully) array.
+      $file = array_shift($file);
+
+      // Now parse the JS for version
+      $content = file_get_contents($file->uri);
+      preg_match('#Cloud Zoom V(?P<version>[0-9\.]+)#', $content, $matches);
+      $file->cz_version = isset($matches['version']) ? $matches['version'] : FALSE;
+
+      // Store it in the cache
+      $cache['paths'][$path] = $file;
+    }
+    else {
+      // No JS foundm store false so its statically cached
+      $cache['paths'][$path] = FALSE;
+    }
   }
 
+  // Return the item from the cache
   return $cache['paths'][$path];
 }
 
