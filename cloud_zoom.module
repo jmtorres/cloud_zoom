@@ -31,7 +31,7 @@ function cloud_zoom_requirements($phase) {
  * Internal Helper function to check if the required source code is present
  */
 function _cloud_zoom_files_present() {
-  $path = libararies_get_path('cloud-zoom');
+  $path = libraries_get_path('cloud-zoom');
   return (file_exists($path .'/cloud-zoom.js') && file_exists($path .'/cloud-zoom.css'));
 }
 
@@ -127,12 +127,15 @@ function cloud_zoom_field_formatter_view($entity_type, $entity, $field, $instanc
 }
 
 function cloud_zoom_add_library(){
+  $path = libraries_get_path('jquery.actual');
+  if (file_exists($path . '/jquery.actual.js')) drupal_add_js($path . '/jquery.actual.js');
+  drupal_add_library('system', 'effects.scale');
   // Add the cloud zoom JS and CSS
-  $libary_path = libararies_get_path('cloud-zoom');
+  $library_path = libraries_get_path('cloud-zoom');
   $module_path = drupal_get_path('module', 'cloud_zoom');
-  drupal_add_js($libary_path . '/cloud-zoom.1.0.2.js');
+  drupal_add_js($library_path . '/cloud-zoom.js');
   drupal_add_js($module_path .'/cloud_zoom.js');
-  drupal_add_css($libary_path . '/cloud-zoom.css');
+  drupal_add_css($library_path . '/cloud-zoom.css');
 }
 
 /**
