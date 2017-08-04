@@ -26,7 +26,6 @@ function cloud_zoom_requirements($phase) {
   }
 }
 
-
 /**
  * Internal Helper function to check if the required source code is present
  */
@@ -35,48 +34,291 @@ function _cloud_zoom_files_present() {
   return (file_exists($path .'/cloudzoom.js') && file_exists($path .'/cloudzoom.css'));
 }
 
+function _cloud_zoom_settings() {
+  $settings = &drupal_static(__FUNCTION__);
+
+  if (!isset($settings)) {
+    $image_styles = image_style_options(FALSE);
+    $settings = array(
+      'cloud_zoom_display_style' => array(
+        'key' => null,
+        'type' => 'select',
+        'title' => t('Display image style'),
+        'options' => $image_styles,
+        'empty_option' => t('None (original image)'),
+        'default' => '',
+      ),
+      'cloud_zoom_zoom_style' => array(
+        'key' => null,
+        'type' => 'select',
+        'title' => t('Zoomed image style'),
+        'options' => $image_styles,
+        'empty_option' => t('None (original image)'),
+        'default' => '',
+      ),
+      'cloud_zoom_thumbnail_style' => array(
+        'key' => null,
+        'type' => 'select',
+        'title' => t('Thumbnail image style'),
+        'options' => $image_styles,
+        'empty_option' => t('None (original image)'),
+        'default' => '',
+      ),
+      'cloud_zoom_tint_color' => array(
+        'key' => 'tintColor',
+        'type' => 'textfield',
+        'title' => t('Tint Color'),
+        'description' => t('Color to use for the tint effect'),
+        'default' => '#FFF',
+      ),
+      'cloud_zoom_tint_opacity' => array(
+        'key' => 'tintOpacity',
+        'type' => 'textfield',
+        'title' => t('Tint Opacity'),
+        'description' => t('Opacity of tint 0-1. If zero, no tint will be visible.'),
+        'default' => '0.25',
+      ),
+      'cloud_zoom_animation_time' => array(
+        'key' => 'animationTime',
+        'type' => 'textfield',
+        'title' => t('Animation Time'),
+        'description' => t('Duration of the animation effects in milliseconds.'),
+        'default' => '500',
+      ),
+      'cloud_zoom_lens_class' => array(
+        'key' => 'lensClass',
+        'type' => 'textfield',
+        'title' => t('Lens Class'),
+        'description' => t('CSS class to use for lens.'),
+        'default' => 'cloudzoom-lens',
+      ),
+      'cloud_zoom_zoom_position' => array(
+        'key' => 'zoomPosition',
+        'type' => 'select',
+        'title' => t('Zoom Position'),
+        'options' => array(
+          '0' => t('Top Center'),
+          '1' => t('Top Right'),
+          '2' => t('Top Right Corner'),
+          '3' => t('Right Top'),
+          '4' => t('Right Center'),
+          '5' => t('Right Bottom'),
+          '6' => t('Bottom Right Corner'),
+          '7' => t('Bottom Right'),
+          '8' => t('Bottom Center'),
+          '9' => t('Bottom Left'),
+          '10' => t('Bottom Left Corner'),
+          '11' => t('Left Bottom'),
+          '12' => t('Left Center'),
+          '13' => t('Left Top'),
+          '14' => t('Top Left'),
+          '15' => t('Top Left Corner'),
+        ),
+        'default' => '3',
+      ),
+      'cloud_zoom_zoom_offset_x' => array(
+        'key' => 'zoomOffsetX',
+        'type' => 'textfield',
+        'title' => t('Zoom Offset X'),
+        'default' => '15',
+      ),
+      'cloud_zoom_zoom_offset_y' => array(
+        'key' => 'zoomOffsetY',
+        'type' => 'textfield',
+        'title' => t('Zoom Offset Y'),
+        'default' => '0',
+      ),
+      'cloud_zoom_zoom_fly_out' => array(
+        'key' => 'zoomFlyOut',
+        'type' => 'checkbox',
+        'title' => t('Zoom Fly Out'),
+        'default' => TRUE,
+      ),
+      'cloud_zoom_zoom_class' => array(
+        'key' => 'zoomClass',
+        'type' => 'textfield',
+        'title' => t('Zoom Class'),
+        'default' => 'cloudzoom-zoom',
+      ),
+      'cloud_zoom_zoom_inside_class' => array(
+        'key' => 'zoomInsideClass',
+        'type' => 'textfield',
+        'title' => t('Zoom Inside Class'),
+        'default' => 'cloudzoom-zoom-inside',
+      ),
+      'cloud_zoom_zoom_size_mode' => array(
+        'key' => 'zoomSizeMode',
+        'type' => 'select',
+        'title' => t('Zoom Size Mode'),
+        'options' => array(
+          'lens' => t('Lens'),
+          'zoom' => t('Zoom'),
+          'full' => t('Full'),
+          'image' => t('Image'),
+        ),
+        'default' => 'lens',
+      ),
+      'cloud_zoom_caption_source' => array(
+        'key' => 'captionSource',
+        'type' => 'textfield',
+        'title' => t('Caption Source'),
+        'default' => 'title',
+      ),
+      'cloud_zoom_caption_type' => array(
+        'key' => 'captionType',
+        'type' => 'select',
+        'title' => t('Caption Type'),
+        'options' => array(
+          'attr' => 'attr',
+          'html' => 'html',
+        ),
+        'default' => 'attr',
+      ),
+      'cloud_zoom_caption_position' => array(
+        'key' => 'captionPosition',
+        'type' => 'select',
+        'title' => t('Caption Position'),
+        'options' => array(
+          'top' => t('Top'),
+          'bottom' => t('Bottom'),
+        ),
+        'default' => 'top',
+      ),
+      'cloud_zoom_variable_magnification' => array(
+        'key' => 'variableMagnification',
+        'type' => 'checkbox',
+        'title' => t('Variable Magnification'),
+        'default' => TRUE,
+      ),
+      'cloud_zoom_start_magnification' => array(
+        'key' => 'startMagnification',
+        'type' => 'textfield',
+        'title' => t('Start Magnification'),
+        'default' => 'auto',
+      ),
+      'cloud_zoom_min_magnification' => array(
+        'key' => 'minMagnification',
+        'type' => 'textfield',
+        'title' => t('Min Magnification'),
+        'default' => 'auto',
+      ),
+      'cloud_zoom_max_magnification' => array(
+        'key' => 'maxMagnification',
+        'type' => 'textfield',
+        'title' => t('Max Magnification'),
+        'default' => 'auto',
+      ),
+      'cloud_zoom_easing' => array(
+        'key' => 'easing',
+        'type' => 'textfield',
+        'title' => t('Easing'),
+        'default' => '8',
+      ),
+      'cloud_zoom_lazy_load_zoom' => array(
+        'key' => 'lazyLoadZoom',
+        'type' => 'checkbox',
+        'title' => t('Lazy Load Zoom'),
+        'default' => FALSE,
+      ),
+      'cloud_zoom_mouse_trigger_event' => array(
+        'key' => 'mouseTriggerEvent',
+        'type' => 'select',
+        'title' => t('Mouse Trigger Event'),
+        'options' => array(
+          'mousemove' => t('Mouse Move'),
+          'click' => t('Click'),
+        ),
+        'default' => 'mousemove',
+      ),
+      'cloud_zoom_disable_zoom' => array(
+        'key' => 'disableZoom',
+        'type' => 'select',
+        'title' => t('Disable Zoom'),
+        'options' => array(
+          'false' => t('No'),
+          'true' => t('Yes'),
+          'auto' => t('Auto'),
+          'min_width' => t('Minimum Width'),
+        ),
+        'default' => FALSE,
+      ),
+      'cloud_zoom_disable_on_screen_width' => array(
+        'key' => 'disableOnScreenWidth',
+        'type' => 'textfield',
+        'title' => t('Disable On Screen Width'),
+        'default' => '0',
+      ),
+      'cloud_zoom_gallery_fade' => array(
+        'key' => 'galleryFade',
+        'type' => 'checkbox',
+        'title' => t('Gallery Fade'),
+        'default' => TRUE,
+      ),
+      'cloud_zoom_gallery_hover_delay' => array(
+        'key' => 'galleryHoverDelay',
+        'type' => 'textfield',
+        'title' => t('Gallery Hover Delay'),
+        'default' => '200',
+      ),
+      'cloud_zoom_perma_zoom' => array(
+        'key' => 'permaZoom',
+        'type' => 'checkbox',
+        'title' => t('Perma Zoom'),
+        'default' => FALSE,
+      ),
+      'cloud_zoom_zoom_width' => array(
+        'key' => 'zoomWidth',
+        'type' => 'textfield',
+        'title' => t('Zoom Width'),
+        'default' => '0',
+      ),
+      'cloud_zoom_zoom_height' => array(
+        'key' => 'zoomHeight',
+        'type' => 'textfield',
+        'title' => t('Zoom Height'),
+        'default' => '0',
+      ),
+      'cloud_zoom_lens_width' => array(
+        'key' => 'lensWidth',
+        'type' => 'textfield',
+        'title' => t('Lens Width'),
+        'default' => '0',
+      ),
+      'cloud_zoom_lens_height' => array(
+        'key' => 'lensHeight',
+        'type' => 'textfield',
+        'title' => t('Lens Height'),
+        'default' => '0',
+      ),
+      'cloud_zoom_hover_intent_delay' => array(
+        'key' => 'hoverIntentDelay',
+        'type' => 'textfield',
+        'title' => t('Hover Intent Delay'),
+        'default' => '0',
+      ),
+      'cloud_zoom_auto_inside' => array(
+        'key' => 'autoInside',
+        'type' => 'textfield',
+        'title' => t('Auto Inside'),
+        'default' => '0',
+      ),
+      'cloud_zoom_touch_start_delay' => array(
+        'key' => 'touchStartDelay',
+        'type' => 'textfield',
+        'title' => t('Touch Start Delay'),
+        'default' => '0',
+      ),
+    );
+  }
+
+  return $settings;
+}
 
 /**
  * Implementation of hook_field_formatter().
  */
 function cloud_zoom_field_formatter_info() {
-  $formatter_settings = array(
-    'cloud_zoom_display_style' => '',
-    'cloud_zoom_zoom_style' => '',
-    'cloud_zoom_tint_color' => '#FFF',
-    'cloud_zoom_tint_opacity' => '0.25',
-    'cloud_zoom_animation_time' => '500',
-    'cloud_zoom_lens_class' => 'cloudzoom-lens',
-    'cloud_zoom_zoom_position' => '3',
-    'cloud_zoom_zoom_offset_x' => '15',
-    'cloud_zoom_zoom_offset_y' => '0',
-    'cloud_zoom_zoom_fly_out' => TRUE,
-    'cloud_zoom_zoom_class' => 'cloudzoom-zoom',
-    'cloud_zoom_zoom_inside_class' => 'cloudzoom-zoom-inside',
-    'cloud_zoom_zoom_size_mode' => 'lens',
-    'cloud_zoom_caption_source' => 'title',
-    'cloud_zoom_caption_type' => 'attr',
-    'cloud_zoom_caption_position' => 'top',
-    'cloud_zoom_variable_magnification' => TRUE,
-    'cloud_zoom_start_magnification' => 'auto',
-    'cloud_zoom_min_magnification' => 'auto',
-    'cloud_zoom_max_magnification' => 'auto',
-    'cloud_zoom_easing' => '8',
-    'cloud_zoom_lazy_load_zoom' => FALSE,
-    'cloud_zoom_mouse_trigger_event' => 'mousemove',
-    'cloud_zoom_disable_zoom' => FALSE,
-    'cloud_zoom_disable_on_screen_width' => '0',
-    'cloud_zoom_gallery_fade' => TRUE,
-    'cloud_zoom_gallery_hover_delay' => '200',
-    'cloud_zoom_perma_zoom' => FALSE,
-    'cloud_zoom_zoom_width' => '0',
-    'cloud_zoom_zoom_height' => '0',
-    'cloud_zoom_lens_width' => '0',
-    'cloud_zoom_lens_height' => '0',
-    'cloud_zoom_hover_intent_delay' => '0',
-    'cloud_zoom_auto_inside' => '0',
-    'cloud_zoom_touch_start_delay' => '0',
-  );
+  $formatter_settings = _cloud_zoom_array_column(_cloud_zoom_settings(), 'default');
 
   $formatters = array(
     'cloud_zoom' => array(
@@ -103,277 +345,16 @@ function cloud_zoom_field_formatter_settings_form($field, $instance, $view_mode,
   $display = $instance['display'][$view_mode];
   $settings = $display['settings'];
 
-  $image_styles = image_style_options(FALSE);
-  $element['cloud_zoom_display_style'] = array(
-    '#type' => 'select',
-    '#title' => t('Display image style'),
-    '#options' => $image_styles,
-    '#empty_option' => t('None (original image)'),
-    '#default_value' => $settings['cloud_zoom_display_style'],
-  );
-
-  $element['cloud_zoom_zoom_style'] = array(
-    '#type' => 'select',
-    '#title' => t('Zoomed image style'),
-    '#options' => $image_styles,
-    '#empty_option' => t('None (original image)'),
-    '#default_value' => $settings['cloud_zoom_zoom_style'],
-  );
-
-  if ($display['type'] == 'cloud_zoom_gallery') {
-    $element['cloud_zoom_thumbnail_style'] = array(
-      '#type' => 'select',
-      '#title' => t('Thumbnail image style'),
-      '#options' => $image_styles,
-      '#empty_option' => t('None (original image)'),
-      '#default_value' => $settings['cloud_zoom_thumbnail_style'],
-    );
-
+  $element = array();
+  foreach (_cloud_zoom_settings() as $key => $setting){
+    $element[$key] = _cloud_zoom_map_options($setting, array(
+      '#type' => 'type',
+      '#title' => 'title',
+      '#description' => 'description',
+      '#options' => 'options',
+      '#empty_option' => 'empty_option',
+    )) + array('#default_value' => $settings[$key]);
   }
-  $element['cloud_zoom_tint_color'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Tint Color'),
-    '#description' => t('Color to use for the tint effect'),
-    '#default_value' => $settings['cloud_zoom_tint_color'],
-  );
-
-  $element['cloud_zoom_tint_opacity'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Tint Opacity'),
-    '#description' => t('Opacity of tint 0-1. If zero, no tint will be visible.'),
-    '#default_value' => $settings['cloud_zoom_tint_opacity'],
-  );
-
-  $element['cloud_zoom_animation_time'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Animation Time'),
-    '#description' => t('Duration of the animation effects in milliseconds.'),
-    '#default_value' => $settings['cloud_zoom_animation_time'],
-  );
-
-  $element['cloud_zoom_lens_class'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Lens Class'),
-    '#description' => t('CSS class to use for lens.'),
-    '#default_value' => $settings['cloud_zoom_lens_class'],
-  );
-
-  $element['cloud_zoom_zoom_position'] = array(
-    '#type' => 'select',
-    '#title' => t('Zoom Position'),
-    '#options' => array(
-      '0' => t('Top Center'),
-      '1' => t('Top Right'),
-      '2' => t('Top Right Corner'),
-      '3' => t('Right Top'),
-      '4' => t('Right Center'),
-      '5' => t('Right Bottom'),
-      '6' => t('Bottom Right Corner'),
-      '7' => t('Bottom Right'),
-      '8' => t('Bottom Center'),
-      '9' => t('Bottom Left'),
-      '10' => t('Bottom Left Corner'),
-      '11' => t('Left Bottom'),
-      '12' => t('Left Center'),
-      '13' => t('Left Top'),
-      '14' => t('Top Left'),
-      '15' => t('Top Left Corner'),
-    ),
-    '#default_value' => $settings['cloud_zoom_zoom_position'],
-  );
-
-  $element['cloud_zoom_zoom_offset_x'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Zoom Offset X'),
-    '#default_value' => $settings['cloud_zoom_zoom_offset_x'],
-  );
-
-  $element['cloud_zoom_zoom_offset_y'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Zoom Offset Y'),
-    '#default_value' => $settings['cloud_zoom_zoom_offset_y'],
-  );
-
-  $element['cloud_zoom_zoom_fly_out'] = array(
-    '#type' => 'checkbox',
-    '#title' => t('Zoom Fly Out'),
-    '#default_value' => $settings['cloud_zoom_zoom_fly_out'],
-  );
-
-  $element['cloud_zoom_zoom_class'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Zoom Class'),
-    '#default_value' => $settings['cloud_zoom_zoom_class'],
-  );
-
-  $element['cloud_zoom_zoom_inside_class'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Zoom Inside Class'),
-    '#default_value' => $settings['cloud_zoom_zoom_inside_class'],
-  );
-
-  $element['cloud_zoom_zoom_size_mode'] = array(
-    '#type' => 'select',
-    '#title' => t('Zoom Size Mode'),
-    '#options' => array(
-      'lens' => t('Lens'),
-      'zoom' => t('Zoom'),
-      'full' => t('Full'),
-      'image' => t('Image'),
-    ),
-    '#default_value' => $settings['cloud_zoom_zoom_size_mode'],
-  );
-
-  $element['cloud_zoom_caption_source'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Caption Source'),
-    '#default_value' => $settings['cloud_zoom_caption_source'],
-  );
-
-  $element['cloud_zoom_caption_type'] = array(
-    '#type' => 'select',
-    '#title' => t('Caption Type'),
-    '#options' => array(
-      'attr' => 'attr',
-      'html' => 'html',
-    ),
-    '#default_value' => $settings['cloud_zoom_caption_type'],
-  );
-
-  $element['cloud_zoom_caption_position'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Caption Position'),
-    '#options' => array(
-      'top' => t('Top'),
-      'bottom' => t('Bottom'),
-    ),
-    '#default_value' => $settings['cloud_zoom_caption_position'],
-  );
-
-  $element['cloud_zoom_variable_magnification'] = array(
-    '#type' => 'checkbox',
-    '#title' => t('Variable Magnification'),
-    '#default_value' => $settings['cloud_zoom_variable_magnification'],
-  );
-
-  $element['cloud_zoom_start_magnification'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Start Magnification'),
-    '#default_value' => $settings['cloud_zoom_start_magnification'],
-  );
-
-  $element['cloud_zoom_min_magnification'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Min Magnification'),
-    '#default_value' => $settings['cloud_zoom_min_magnification'],
-  );
-
-  $element['cloud_zoom_max_magnification'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Max Magnification'),
-    '#default_value' => $settings['cloud_zoom_max_magnification'],
-  );
-
-  $element['cloud_zoom_easing'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Easing'),
-    '#default_value' => $settings['cloud_zoom_easing'],
-  );
-
-  $element['cloud_zoom_lazy_load_zoom'] = array(
-    '#type' => 'checkbox',
-    '#title' => t('Lazy Load Zoom'),
-    '#default_value' => $settings['cloud_zoom_lazy_load_zoom'],
-  );
-
-  $element['cloud_zoom_mouse_trigger_event'] = array(
-    '#type' => 'select',
-    '#title' => t('Mouse Trigger Event'),
-    '#options' => array(
-      'mousemove' => t('Mouse Move'),
-      'click' => t('Click'),
-    ),
-    '#default_value' => $settings['cloud_zoom_mouse_trigger_event'],
-  );
-
-  $element['cloud_zoom_disable_zoom'] = array(
-    '#type' => 'select',
-    '#title' => t('Disable Zoom'),
-    '#options' => array(
-      'false' => t('No'),
-      'true' => t('Yes'),
-      'auto' => t('Auto'),
-      'min_width' => t('Minimum Width'),
-    ),
-    '#default_value' => $settings['cloud_zoom_disable_zoom'],
-  );
-
-  $element['cloud_zoom_disable_on_screen_width'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Disable On Screen Width'),
-    '#default_value' => $settings['cloud_zoom_disable_on_screen_width'],
-  );
-
-  $element['cloud_zoom_gallery_fade'] = array(
-    '#type' => 'checkbox',
-    '#title' => t('Gallery Fade'),
-    '#default_value' => $settings['cloud_zoom_gallery_fade'],
-  );
-
-  $element['cloud_zoom_gallery_hover_delay'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Gallery Hover Delay'),
-    '#default_value' => $settings['cloud_zoom_gallery_hover_delay'],
-  );
-
-  $element['cloud_zoom_perma_zoom'] = array(
-    '#type' => 'checkbox',
-    '#title' => t('Perma Zoom'),
-    '#default_value' => $settings['cloud_zoom_perma_zoom'],
-  );
-
-  $element['cloud_zoom_zoom_width'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Zoom Width'),
-    '#default_value' => $settings['cloud_zoom_zoom_width'],
-  );
-
-  $element['cloud_zoom_zoom_height'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Zoom Height'),
-    '#default_value' => $settings['cloud_zoom_zoom_height'],
-  );
-
-  $element['cloud_zoom_lens_width'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Lens Width'),
-    '#default_value' => $settings['cloud_zoom_lens_width'],
-  );
-
-  $element['cloud_zoom_lens_height'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Lens Height'),
-    '#default_value' => $settings['cloud_zoom_lens_height'],
-  );
-
-  $element['cloud_zoom_hover_intent_delay'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Hover Intent Delay'),
-    '#default_value' => $settings['cloud_zoom_hover_intent_delay'],
-  );
-
-  $element['cloud_zoom_auto_inside'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Auto Inside'),
-    '#default_value' => $settings['cloud_zoom_auto_inside'],
-  );
-
-  $element['cloud_zoom_touch_start_delay'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Touch Start Delay'),
-    '#default_value' => $settings['cloud_zoom_touch_start_delay'],
-  );
-
   return $element;
 }
 
@@ -406,33 +387,28 @@ function cloud_zoom_field_formatter_settings_summary($field, $instance, $view_mo
     ));
   }
 
-  $form = $form_state = array();
-  $settings_form = cloud_zoom_field_formatter_settings_form(
-    $field,
-    $instance,
-    $view_mode,
-    $form,
-    $form_state);
-
+  $cloud_zoom_settings = _cloud_zoom_settings();
+  $summary = array();
   switch ($display['type']) {
     case 'cloud_zoom':
       foreach ($settings as $key => $setting) {
-        switch($settings_form[$key]['#type']){
+        switch($cloud_zoom_settings[$key]['type']){
           case 'textfield':
             break;
           case 'select':
-            $setting = $settings_form[$key]['#options'][$setting];
+            $setting = $cloud_zoom_settings[$key]['options'][$setting];
             break;
           case 'checkbox':
             $setting = ($setting) ? 'Yes' : 'No';
             break;
         }
         $summary[] = t('@key: @setting', array(
-          '@key' => $settings_form[$key]['#title'],
+          '@key' => $cloud_zoom_settings[$key]['title'],
           '@setting' => $setting,
         ));
       }
       break;
+
   }
 
   return implode('<br />', $summary);
@@ -440,8 +416,9 @@ function cloud_zoom_field_formatter_settings_summary($field, $instance, $view_mo
 
 /**
  * Implements hook_field_formatter_view().
- */ 
+ */
 function cloud_zoom_field_formatter_view($entity_type, $entity, $field, $instance, $langcode, $items, $display) {
+  $element = array();
   $display_style = $display['settings']['cloud_zoom_display_style'];
   $zoom_style = $display['settings']['cloud_zoom_zoom_style'];
   $settings = &$display['settings'];
@@ -453,43 +430,7 @@ function cloud_zoom_field_formatter_view($entity_type, $entity, $field, $instanc
         $element[$delta] = array(
           '#theme' => 'cloud_zoom_image',
           '#item' => $item,
-          '#settings' => array(
-            'image_style' => $settings['cloud_zoom_display_style'],
-            'zoom_style' => $settings['cloud_zoom_zoom_style'],
-            'tintColor' => $settings['cloud_zoom_tint_color'],
-            'tintOpacity' => $settings['cloud_zoom_tint_opacity'],
-            'animationTime' => $settings['cloud_zoom_animation_time'],
-            'lensClass' => $settings['cloud_zoom_lens_class'],
-            'zoomPosition' => $settings['cloud_zoom_zoom_position'],
-            'zoomOffsetX' => $settings['cloud_zoom_zoom_offset_x'],
-            'zoomOffsetY' => $settings['cloud_zoom_zoom_offset_y'],
-            'zoomFlyOut' => $settings['cloud_zoom_zoom_fly_out'],
-            'zoomClass' => $settings['cloud_zoom_zoom_class'],
-            'zoomInsideClass' => $settings['cloud_zoom_zoom_inside_class'],
-            'zoomSizeMode' => $settings['cloud_zoom_zoom_size_mode'],
-            'captionSource' => $settings['cloud_zoom_caption_source'],
-            'captionType' => $settings['cloud_zoom_caption_type'],
-            'captionPosition' => $settings['cloud_zoom_caption_position'],
-            'variableMagnification' => $settings['cloud_zoom_variable_magnification'],
-            'startMagnification' => $settings['cloud_zoom_start_magnification'],
-            'minMagnification' => $settings['cloud_zoom_min_magnification'],
-            'maxMagnification' => $settings['cloud_zoom_max_magnification'],
-            'easing' => $settings['cloud_zoom_easing'],
-            'lazyLoadZoom' => $settings['cloud_zoom_lazy_load_zoom'],
-            'mouseTriggerEvent' => $settings['cloud_zoom_mouse_trigger_event'],
-            'disableZoom' => $settings['cloud_zoom_disable_zoom'],
-            'disableOnScreenWidth' => $settings['cloud_zoom_disable_on_screenWidth'],
-            'galleryFade' => $settings['cloud_zoom_gallery_fade'],
-            'galleryHoverDelay' => $settings['cloud_zoom_gallery_hover_delay'],
-            'permaZoom' => $settings['cloud_zoom_perma_zoom'],
-            'zoomWidth' => $settings['cloud_zoom_zoom_width'],
-            'zoomHeight' => $settings['cloud_zoom_zoom_height'],
-            'lensWidth' => $settings['cloud_zoom_lens_width'],
-            'lensHeight' => $settings['cloud_zoom_lens_height'],
-            'hoverIntentDelay' => $settings['cloud_zoom_hover_intent_delay'],
-            'autoInside' => $settings['cloud_zoom_auto_inside'],
-            'touchStartDelay' => $settings['cloud_zoom_touch_start_delay'],
-          ),
+          '#settings' =>_cloud_zoom_map_options($settings, _cloud_zoom_array_column(_cloud_zoom_settings(), 'key')),
         );
       }
     break;
@@ -507,7 +448,7 @@ function cloud_zoom_field_formatter_view($entity_type, $entity, $field, $instanc
       if(count($items) > 1) {
         foreach ($items as $delta => $item) {
           $zoom_image = image_style_url($zoom_style, $item['uri']);
-          $item['attributes']['data-cloudzoom'] = cloud_zoom_data_encode(
+          $item['attributes']['data-cloudzoom'] = _cloud_zoom_data_encode(
             array(
               'useZoom' => '#' . $id,
               'image' => image_style_url($display_style, $item['uri']),
@@ -565,7 +506,7 @@ function theme_cloud_zoom_image($variables) {
   $zoom_path = $variables['zoom_style'] ? image_style_url($variables['zoom_style'], $item['uri']) : file_create_url($item['uri']);
 
   $item['attributes']['class'][] = 'cloudzoom';
-  $item['attributes']['data-cloudzoom'] = cloud_zoom_data_encode(
+  $item['attributes']['data-cloudzoom'] = _cloud_zoom_data_encode(
     $variables['settings'] +
     array(
       'zoomImage' => $zoom_path,
@@ -575,7 +516,7 @@ function theme_cloud_zoom_image($variables) {
   return theme('image_formatter', $variables);
 }
 
-function cloud_zoom_data_encode($settings) {
+function _cloud_zoom_data_encode($settings) {
   $data = array();
   foreach ($settings as $key => $setting) {
     if(is_numeric($setting)){
@@ -586,4 +527,45 @@ function cloud_zoom_data_encode($settings) {
     }
   }
   return implode($data, ', ');
+}
+
+function _cloud_zoom_array_column($array, $columnKey, $indexKey = null) {
+  if (!function_exists('array_column')) {
+    $result = array();
+    foreach ($array as $subArray) {
+      if (is_null($indexKey) && array_key_exists($columnKey, $subArray)) {
+        $result[] = is_object($subArray)?$subArray->$columnKey: $subArray[$columnKey];
+      } elseif (array_key_exists($indexKey, $subArray)) {
+        if (is_null($columnKey)) {
+          $index = is_object($subArray)?$subArray->$indexKey: $subArray[$indexKey];
+          $result[$index] = $subArray;
+        } elseif (array_key_exists($columnKey, $subArray)) {
+          $index = is_object($subArray)?$subArray->$indexKey: $subArray[$indexKey];
+          $result[$index] = is_object($subArray)?$subArray->$columnKey: $subArray[$columnKey];
+        }
+      }
+    }
+    return $result;
+  }
+  return array_column($array, $columnKey, $indexKey = null);
+}
+
+function _cloud_zoom_map_options(&$parameters, $option_map) {
+  $options = array();
+  if(is_array($parameters)) {
+    foreach($option_map as $key => $value) {
+      if(isset($parameters[$value]) && !is_null($parameters[$value])) {
+        $options[$key] = &$parameters[$value];
+      }
+    }
+  }
+  else if(is_object($parameters)) {
+    foreach($option_map as $key => $value) {
+      if(property_exists($parameters, $value) && !is_null($parameters->$value)) {
+        $options[$key] = &$parameters->$value;
+      }
+    }
+  }
+
+  return $options;
 }
