@@ -19,8 +19,8 @@
       <file leaf-file-name="cloud_zoom.module" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/cloud_zoom.module">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="150">
-              <caret line="10" column="3" lean-forward="true" selection-start-line="10" selection-start-column="3" selection-end-line="10" selection-end-column="3" />
+            <state relative-caret-position="-46">
+              <caret line="425" column="47" lean-forward="true" selection-start-line="425" selection-start-column="47" selection-end-line="425" selection-end-column="47" />
               <folding />
             </state>
           </provider>
@@ -144,12 +144,12 @@
       <option name="presentableId" value="Default" />
       <updated>1501719554354</updated>
       <workItem from="1501719555726" duration="1442000" />
-      <workItem from="1501726886690" duration="9918000" />
+      <workItem from="1501726886690" duration="10309000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="11360000" />
+    <option name="totallyTimeSpent" value="11751000" />
   </component>
   <component name="TodoView">
     <todo-panel id="selected-file">
@@ -192,8 +192,8 @@
   <component name="editorHistoryManager">
     <entry file="file://$PROJECT_DIR$/cloud_zoom.module">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="150">
-          <caret line="10" column="3" lean-forward="true" selection-start-line="10" selection-start-column="3" selection-end-line="10" selection-end-column="3" />
+        <state relative-caret-position="-46">
+          <caret line="425" column="47" lean-forward="true" selection-start-line="425" selection-start-column="47" selection-end-line="425" selection-end-column="47" />
           <folding />
         </state>
       </provider>

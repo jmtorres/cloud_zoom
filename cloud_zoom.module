@@ -415,8 +415,8 @@ function cloud_zoom_field_formatter_settings_summary($field, $instance, $view_mo
     $field,
     $instance,
     $view_mode,
-    array(),
-    array());
+    $form = array(),
+    $form_state = array());
 
   $summary = array();
   switch ($display['type']) {
