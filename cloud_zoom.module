@@ -161,7 +161,7 @@ function cloud_zoom_field_formatter_settings_form($field, $instance, $view_mode,
   $element['cloud_zoom_zoom_position'] = array(
     '#type' => 'select',
     '#title' => t('Zoom Position'),
-    '#option' => array(
+    '#options' => array(
       '0' => t('Top Center'),
       '1' => t('Top Right'),
       '2' => t('Top Right Corner'),
@@ -241,7 +241,7 @@ function cloud_zoom_field_formatter_settings_form($field, $instance, $view_mode,
   );
 
   $element['cloud_zoom_caption_position'] = array(
-    '#type' => 'text',
+    '#type' => 'textfield',
     '#title' => t('Caption Position'),
     '#options' => array(
       'top' => t('Top'),
@@ -312,11 +312,6 @@ function cloud_zoom_field_formatter_settings_form($field, $instance, $view_mode,
     '#type' => 'textfield',
     '#title' => t('Disable On Screen Width'),
     '#default_value' => $settings['cloud_zoom_disable_on_screen_width'],
-    '#states' => array(
-      'visible' => array(
-        ':input[name="cloud_zoom_disable_zoom"]' => array('value' => 'min_width'),
-      ),
-    ),
   );
 
   $element['cloud_zoom_gallery_fade'] = array(
@@ -411,26 +406,32 @@ function cloud_zoom_field_formatter_settings_summary($field, $instance, $view_mo
     ));
   }
 
-  $form = cloud_zoom_field_formatter_settings_form(
+  $form = $form_state = array();
+  $settings_form = cloud_zoom_field_formatter_settings_form(
     $field,
     $instance,
     $view_mode,
-    $form = array(),
-    $form_state = array());
+    $form,
+    $form_state);
 
-  $summary = array();
   switch ($display['type']) {
     case 'cloud_zoom':
       foreach ($settings as $key => $setting) {
-        if (is_numeric($setting)) {
-          $setting = ($setting) ? 'Yes' : 'No';
+        switch($settings_form[$key]['#type']){
+          case 'textfield':
+            break;
+          case 'select':
+            $setting = $settings_form[$key]['#options'][$setting];
+            break;
+          case 'checkbox':
+            $setting = ($setting) ? 'Yes' : 'No';
+            break;
         }
         $summary[] = t('@key: @setting', array(
-          '@key' => $form[$key]['#title'],
+          '@key' => $settings_form[$key]['#title'],
           '@setting' => $setting,
         ));
       }
-
       break;
   }
 
@@ -439,9 +440,8 @@ function cloud_zoom_field_formatter_settings_summary($field, $instance, $view_mo
 
 /**
  * Implements hook_field_formatter_view().
- */
+ */ 
 function cloud_zoom_field_formatter_view($entity_type, $entity, $field, $instance, $langcode, $items, $display) {
-  $element = array();
   $display_style = $display['settings']['cloud_zoom_display_style'];
   $zoom_style = $display['settings']['cloud_zoom_zoom_style'];
   $settings = &$display['settings'];
